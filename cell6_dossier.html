@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>NADIR ARCHIVE TERMINAL — ЯЧЕЙКА-6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a; --bg-panel:#0d0f0d;
+  --green:#2be873; --green-dim:#328a52; --green-bright:#b3f5c8;
+  --amber:#e0a52e; --red:#d4324a; --red-dim:#6e1c26; --line:#1c4028;
+  --glow:0 0 6px currentColor; --bezel-gap:26px; --screen-radius:46px;
+  font-size:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;background:#050403;color:var(--red);
+  font-family:'JetBrains Mono','Courier New',Courier,monospace;overflow:hidden}
+
+/* ===== тот же корпус монитора, что у архива ===== */
+.monitor-bezel{pointer-events:none;position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 120% 90% at 30% 15%,#2b2b2b 0%,#171716 35%,#0a0a09 68%,#030302 100%)}
+.monitor-bezel::before{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(112deg,rgba(255,255,255,.02) 0,rgba(255,255,255,.02) 1px,transparent 1px,transparent 4px);
+  mix-blend-mode:overlay;opacity:.6}
+.monitor-bezel::after{content:"";position:absolute;inset:calc(var(--bezel-gap) - 12px);
+  border-radius:calc(var(--screen-radius) + 12px);
+  box-shadow:inset 0 0 2px 1px rgba(255,255,255,.05),inset 0 10px 26px 8px rgba(0,0,0,.85),0 0 24px 4px rgba(0,0,0,.7)}
+.crt-overlay{pointer-events:none;position:fixed;inset:var(--bezel-gap);z-index:50;border-radius:var(--screen-radius);
+  overflow:hidden;background:linear-gradient(rgba(18,16,16,0) 50%,rgba(0,0,0,.3) 50%);background-size:100% 4px}
+.crt-vignette{pointer-events:none;position:fixed;inset:var(--bezel-gap);z-index:51;border-radius:var(--screen-radius);
+  background:radial-gradient(ellipse at center,transparent 48%,rgba(120,10,20,.4) 100%);box-shadow:inset 0 0 40px 8px rgba(0,0,0,.3)}
+.crt-flicker{pointer-events:none;position:fixed;inset:var(--bezel-gap);z-index:52;border-radius:var(--screen-radius);
+  background:rgba(212,50,74,.035);animation:flicker 2.2s infinite}
+@keyframes flicker{0%,97%,100%{opacity:0}98%{opacity:1}99%{opacity:.3}}
+.crt-glass{pointer-events:none;position:fixed;inset:var(--bezel-gap);z-index:53;border-radius:var(--screen-radius);
+  background:linear-gradient(128deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.025) 12%,rgba(255,255,255,0) 26%,rgba(255,255,255,0) 78%,rgba(255,255,255,.015) 100%);
+  mix-blend-mode:screen}
+.crt-rim{pointer-events:none;position:fixed;inset:var(--bezel-gap);z-index:54;border-radius:var(--screen-radius);
+  box-shadow:inset 0 0 0 1px rgba(255,150,160,.1),inset 0 0 22px rgba(255,90,100,.07)}
+
+/* ===== экран ===== */
+.wrap{position:fixed;z-index:1;inset:var(--bezel-gap);border-radius:var(--screen-radius);overflow:hidden;
+  display:flex;flex-direction:column;text-shadow:0 0 2px rgba(212,50,74,.4);
+  animation:bodyflicker .15s infinite;background:var(--bg)}
+@keyframes bodyflicker{0%,100%{opacity:1}50%{opacity:.985}52%{opacity:.96}54%{opacity:.985}}
+
+header{border-bottom:2px solid var(--red);padding:16px 22px;display:flex;justify-content:space-between;
+  align-items:baseline;flex-shrink:0;text-shadow:var(--glow);flex-wrap:wrap;gap:8px}
+header .brand{font-family:'VT323',monospace;font-weight:normal;letter-spacing:2px;color:var(--red);font-size:1.8rem;line-height:1}
+header .brand small{display:block;font-weight:normal;letter-spacing:1px;color:var(--amber);font-size:.65rem;
+  margin-top:6px;font-family:'JetBrains Mono',monospace;text-shadow:none}
+header .stamp{font-size:.72rem;color:var(--bg);background:var(--red);border:1px solid var(--red);
+  padding:4px 10px;letter-spacing:1px;font-weight:bold;text-shadow:none;align-self:center}
+
+main{flex:1;overflow-y:auto;padding:22px 26px 60px}
+.breadcrumb{color:var(--amber);font-size:.8rem;margin-bottom:18px;letter-spacing:.5px}
+.breadcrumb a{color:var(--amber);text-decoration:none;cursor:pointer}
+.breadcrumb a:hover{color:var(--green-bright);text-decoration:underline}
+
+/* ===== карточка оперативника ===== */
+.card{border:1px solid var(--green-dim);border-left:3px solid var(--green-dim);background:var(--bg-panel);
+  padding:16px 18px;margin-bottom:14px;position:relative}
+.card.active{border-color:var(--green);border-left-color:var(--green)}
+.card.gone{border-color:var(--red-dim);border-left-color:var(--red)}
+
+.row{display:flex;gap:14px}
+.pic{flex:0 0 4.2rem;height:4.2rem;display:flex;align-items:center;justify-content:center;
+  font-family:'VT323',monospace;font-size:1.6rem;position:relative;overflow:hidden;
+  background:repeating-linear-gradient(100deg,rgba(43,232,115,.05) 0,rgba(43,232,115,.05) 2px,transparent 2px,transparent 6px), #000;
+  border:1px solid var(--green-dim);color:var(--green)}
+.card.gone .pic{border-color:var(--red-dim);color:var(--red-dim)}
+.pic .dot{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 6px var(--green);animation:blink 1.6s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+
+.meta{flex:1;min-width:0}
+.name{margin:0 0 6px;color:var(--green-bright);font-size:1.05rem;letter-spacing:.3px}
+.card.gone .name{color:var(--red-dim);font-family:'JetBrains Mono',monospace;letter-spacing:1px}
+.tag{display:inline-block;font-size:.68rem;letter-spacing:1px;font-weight:bold;padding:3px 8px;margin-bottom:8px;
+  color:var(--bg);background:var(--green);border:1px solid var(--green)}
+.tag.gone{background:var(--red);border-color:var(--red);color:#1a0304}
+.field{font-size:.78rem;color:var(--green-dim);margin:.15rem 0}
+.field b{color:var(--green-bright);font-weight:normal}
+.note{margin-top:.6rem;font-size:.82rem;color:var(--green-bright);line-height:1.65;
+  border-left:2px solid var(--green-dim);padding-left:.7rem;min-height:1.4em}
+.note .cur{display:inline-block;width:.55em;height:1em;background:var(--green);vertical-align:-2px;
+  animation:blink 1s steps(2) infinite}
+
+.foot{margin-top:1.6rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.back{color:var(--green-dim);font-size:.8rem;background:transparent;border:1px dashed var(--amber);color:var(--amber);
+  padding:8px 14px;cursor:pointer;font-family:inherit;letter-spacing:.5px}
+.back:hover{background:rgba(224,165,46,.12);box-shadow:0 0 6px var(--amber)}
+.hint{font-size:.7rem;color:var(--green-dim)}
+
+@media (max-width:640px){ :root{--bezel-gap:10px;--screen-radius:20px} header{padding:12px 14px} main{padding:16px 14px 50px} }
+</style>
+</head>
+<body>
+<div class="monitor-bezel"></div>
+<div class="wrap">
+  <header>
+    <div class="brand">ЯЧЕЙКА-6 · ЛИЧНЫЕ ДЕЛА<small>NADIR INDUSTRIES · ГРИФ: СЕКРЕТНО · ДОСТУП: КОД 4-5-3</small></div>
+    <div class="stamp">СЕКРЕТНО</div>
+  </header>
+  <main>
+    <div class="breadcrumb"><a id="crumb">← АРХИВ</a> / ЯЧЕЙКА-06 / ДОСЬЕ</div>
+
+    <div class="card active" id="darius">
+      <div class="row">
+        <div class="pic">ДМ<span class="dot"></span></div>
+        <div class="meta">
+          <p class="name">Дариус Мальм</p>
+          <span class="tag">ПОД НАБЛЮДЕНИЕМ</span>
+          <div class="field">Статус: <b>активен</b></div>
+          <div class="field">Ячейка: <b>06</b></div>
+          <div class="note" id="dariusNote"><span class="cur"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card gone" data-w="7"><div class="row"><div class="pic">░░</div><div class="meta">
+      <p class="name" data-name></p><span class="tag gone">ПОГЛОЩЕНЫ</span>
+      <div class="field">Статус: <b>не подлежит восстановлению</b></div>
+      <div class="field">Ячейка: <b>06</b></div>
+    </div></div></div>
+
+    <div class="card gone" data-w="9"><div class="row"><div class="pic">░░</div><div class="meta">
+      <p class="name" data-name></p><span class="tag gone">ПОГЛОЩЕНЫ</span>
+      <div class="field">Статус: <b>не подлежит восстановлению</b></div>
+      <div class="field">Ячейка: <b>06</b></div>
+    </div></div></div>
+
+    <div class="card gone" data-w="6"><div class="row"><div class="pic">░░</div><div class="meta">
+      <p class="name" data-name></p><span class="tag gone">ПОГЛОЩЕНЫ</span>
+      <div class="field">Статус: <b>не подлежит восстановлению</b></div>
+      <div class="field">Ячейка: <b>06</b></div>
+    </div></div></div>
+
+    <div class="foot">
+      <button class="back" id="backBtn">← ВЕРНУТЬСЯ В АРХИВ</button>
+      <span class="hint">Дариус Мальм — единственный неучтённый статус в ячейке-06</span>
+    </div>
+  </main>
+</div>
+<div class="crt-overlay"></div><div class="crt-vignette"></div><div class="crt-flicker"></div>
+<div class="crt-glass"></div><div class="crt-rim"></div>
+
+<script>
+document.getElementById('backBtn').addEventListener('click',()=>{ location.href='index.html'; });
+document.getElementById('crumb').addEventListener('click',()=>{ location.href='index.html'; });
+
+/* ===== заметка о Дариусе печатается по буквам ===== */
+const NOTE="Досье пополняется. Директорат запросил дополнительное наблюдение — причина в текущих материалах не указана.";
+const noteEl=document.getElementById('dariusNote'), cur=noteEl.querySelector('.cur');
+let ni=0;
+(function type(){
+  if(ni<NOTE.length){ noteEl.insertBefore(document.createTextNode(NOTE[ni]),cur); ni++; setTimeout(type,26+Math.random()*38); }
+})();
+
+/* ===== имена поглощённых: нечитаемая глитч-рябь, никогда не складывается в слово ===== */
+const GLYPH='█▓▒░#%&§¤/\\|+~^01';
+function glyphRun(n){ let s=''; for(let i=0;i<n;i++) s+=GLYPH[Math.floor(Math.random()*GLYPH.length)]; return s; }
+document.querySelectorAll('[data-name]').forEach(el=>{
+  const w = +el.closest('.card').dataset.w;
+  el.textContent = glyphRun(w);
+  setInterval(()=>{ el.textContent = glyphRun(w); }, 260 + Math.random()*260);
+});
+
+/* ===== редкий жёсткий глитч всего досье поглощённых, как в архиве ===== */
+const goneCards=[...document.querySelectorAll('.card.gone')];
+function hardglitch(){
+  const c = goneCards[Math.floor(Math.random()*goneCards.length)];
+  c.style.transition='none'; c.style.transform='translate('+(Math.random()*8-4)+'px,'+(Math.random()*4-2)+'px)';
+  c.style.filter='hue-rotate('+(Math.random()*40-20)+'deg)';
+  setTimeout(()=>{ c.style.transform='none'; c.style.filter='none'; }, 90);
+  setTimeout(hardglitch, 2600+Math.random()*3200);
+}
+setTimeout(hardglitch, 2200);
+
+/* ===== фоновый гул терминала под красной тревогой ===== */
+try{
+  const C=window.AudioContext||window.webkitAudioContext;
+  if(C){
+    const A=new C(), M=A.createGain(); M.gain.value=0; M.connect(A.destination);
+    [55,55.6,110].forEach(f=>{ const o=A.createOscillator(),g=A.createGain(); o.frequency.value=f; g.gain.value=.35; o.connect(g); g.connect(M); o.start(); });
+    const start=()=>{ A.resume().then(()=>{ M.gain.setTargetAtTime(.05,A.currentTime,1.2); }); };
+    start(); ['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,start,{passive:true}));
+  }
+}catch(err){}
+</script>
+</body>
+</html>

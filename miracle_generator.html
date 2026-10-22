@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>...</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;900&family=Cinzel+Decorative:wght@700;900&display=swap">
+<style>
+:root{--gold:#e7c15a;--gold2:#fff2c4;--blood:#8c0f1c;--void:#050302;
+  --sd:'Cinzel Decorative','Cinzel',Georgia,serif; --se:'Cinzel',Georgia,serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--void)}
+
+/* мрамор + витражный свет */
+.marble{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 90% 70% at 50% 38%,#221812 0%,#0c0805 55%,#050302 100%)}
+.glass{position:fixed;inset:0;z-index:1;opacity:0;pointer-events:none;mix-blend-mode:screen;transition:opacity 2s;
+  background:
+    repeating-conic-gradient(from 12deg at 50% 8%, rgba(231,193,90,.14) 0 6deg, transparent 6deg 20deg),
+    radial-gradient(ellipse 60% 50% at 50% 6%, rgba(255,242,196,.4), transparent 60%)}
+body.lit .glass{opacity:1}
+.grain{position:fixed;inset:0;z-index:2;opacity:.1;pointer-events:none;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='9'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+
+/* рамка в духе HUD */
+.frame{position:fixed;inset:14px;z-index:3;pointer-events:none;border:1px solid rgba(231,193,90,.35);opacity:0;transition:opacity 1.5s}
+body.lit .frame{opacity:1}
+.frame i{position:absolute;width:22px;height:22px;border:2px solid var(--gold)}
+.frame i.tl{top:-2px;left:-2px;border-right:0;border-bottom:0}
+.frame i.tr{top:-2px;right:-2px;border-left:0;border-bottom:0}
+.frame i.bl{bottom:-2px;left:-2px;border-right:0;border-top:0}
+.frame i.br{bottom:-2px;right:-2px;border-left:0;border-top:0}
+
+/* трещины: золото → к финалу наливаются кровью */
+svg.cracks{position:fixed;inset:0;width:100%;height:100%;z-index:4;pointer-events:none}
+.crack{fill:none;stroke:var(--gold);stroke-width:1.6;opacity:.85;stroke-dasharray:1;stroke-dashoffset:1;
+  filter:drop-shadow(0 0 6px rgba(231,193,90,.6));animation:draw 1.6s ease-out forwards;transition:stroke 2.4s,filter 2.4s}
+@keyframes draw{to{stroke-dashoffset:0}}
+svg.cracks.bleed .crack{stroke:var(--blood);filter:drop-shadow(0 0 10px rgba(140,15,28,.85))}
+
+/* пылинки/угли */
+#pt{position:fixed;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen}
+
+/* текст: штампы строк */
+.stage{position:fixed;inset:0;z-index:6;display:grid;place-items:center;padding:0 5vw;text-align:center}
+.ln{grid-area:1/1;font-family:var(--se);font-weight:900;color:var(--gold2);
+  font-size:clamp(1.7rem,5.4vw,3.6rem);line-height:1.22;letter-spacing:.01em;text-wrap:balance;
+  text-shadow:0 0 8px rgba(231,193,90,.5),0 2px 0 #2a1a06,0 0 28px rgba(231,193,90,.2);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  opacity:0;transform:scale(1.5);filter:blur(6px);animation:stamp .38s cubic-bezier(.1,.9,.2,1) forwards}
+.ln.big{font-family:var(--sd);font-weight:700;color:var(--gold);font-size:clamp(2.4rem,8.5vw,5.6rem)}
+.ln.leave{animation:leave .5s ease-in forwards}
+@keyframes stamp{0%{opacity:0;transform:scale(1.7);filter:blur(10px)}55%{opacity:1;transform:scale(.97);filter:blur(0)}100%{opacity:1;transform:scale(1)}}
+@keyframes leave{to{opacity:0;transform:scale(.94);filter:blur(4px)}}
+
+body.shake{animation:shk .32s linear}
+@keyframes shk{0%,100%{transform:none}20%{transform:translate(-7px,3px)}40%{transform:translate(8px,-4px)}
+  60%{transform:translate(-6px,-2px) rotate(-.3deg)}80%{transform:translate(6px,2px) rotate(.3deg)}}
+
+.flash{position:fixed;inset:0;z-index:8;background:var(--gold2);opacity:0;pointer-events:none}
+.flash.on{animation:fl .35s ease-out}
+@keyframes fl{0%{opacity:.85}100%{opacity:0}}
+.flash.red.on{animation:none;opacity:.9;background:var(--blood);transition:opacity 3s}
+
+.vig{position:fixed;inset:0;z-index:9;pointer-events:none;background:radial-gradient(ellipse at center,transparent 42%,#000 100%)}
+.white{position:fixed;inset:0;z-index:15;background:#fff;pointer-events:none;animation:wh 2.4s ease-out forwards}
+@keyframes wh{0%,10%{opacity:1}100%{opacity:0}}
+.out{position:fixed;inset:0;z-index:20;background:#000;opacity:0;pointer-events:none;transition:opacity 1.6s}
+.out.on{opacity:1}
+
+@media (prefers-reduced-motion:reduce){
+  .ln{animation-duration:.01s}body.shake{animation:none}.flash.on{animation:none}.white{animation-duration:1s}
+}
+</style>
+</head>
+<body>
+<div class="marble"></div><div class="glass"></div><div class="grain"></div>
+<div class="frame"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+<svg class="cracks" id="cracks" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"></svg>
+<canvas id="pt"></canvas>
+<div class="stage" id="stage"></div>
+<div class="flash" id="flash"></div><div class="flash red" id="flashRed"></div>
+<div class="vig"></div><div class="white" id="white"></div><div class="out" id="out"></div>
+
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const AUTO_RETURN=true, RETURN_TO='index.html';
+
+/* ===== звук: орган-дрон + дисторшн-удар по каждой строке, колокол на ключевых ===== */
+let A=null,M=null,pad=null,padG=null,dist=null,ready=false;
+function shaper(amount){
+  const c=A.createWaveShaper(), n=44100, curve=new Float32Array(n);
+  for(let i=0;i<n;i++){ const x=i*2/n-1; curve[i]=(3+amount)*x*20*(Math.PI/180)/(Math.PI+amount*Math.abs(x)); }
+  c.curve=curve; c.oversample='4x'; return c;
+}
+function build(){
+  M=A.createGain(); M.gain.value=1; M.connect(A.destination);
+  dist=shaper(24); const dg=A.createGain(); dg.gain.value=.55; dist.connect(dg); dg.connect(M);
+  padG=A.createGain(); padG.gain.value=0; padG.connect(M);
+  const lp=A.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1400; padG.connect(lp); lp.connect(dist);
+  pad=[73.4,110,146.8,220,293.7].map(f=>{ const o=A.createOscillator(); o.type='sawtooth'; o.frequency.value=f; o.connect(padG); o.start(); return o; });
+  window.__mgStab=function(root,big){
+    const t=A.currentTime, notes=big?[root,root*1.5,root*2,root*3]:[root,root*1.5,root*2];
+    notes.forEach((f,i)=>{
+      const o=A.createOscillator(), g=A.createGain(); o.type='square'; o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime((big?.5:.32)/(i+1),t+.012);
+      g.gain.exponentialRampToValueAtTime(.0001,t+(big?1.1:.5));
+      o.connect(g); g.connect(dist); o.start(t); o.stop(t+(big?1.2:.55));
+    });
+    const s=A.createOscillator(), sg=A.createGain(); s.type='sine'; s.frequency.value=root/2;
+    sg.gain.setValueAtTime(.0001,t); sg.gain.exponentialRampToValueAtTime(big?.9:.5,t+.02); sg.gain.exponentialRampToValueAtTime(.0001,t+(big?1.3:.6));
+    s.connect(sg); sg.connect(M); s.start(t); s.stop(t+(big?1.4:.65));
+  };
+  window.__mgBell=function(){
+    const t=A.currentTime;
+    [523.3,659.3*1.001,784].forEach((f,i)=>{
+      const o=A.createOscillator(), g=A.createGain(); o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.16/(i+1),t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+3.2);
+      o.connect(g); g.connect(M); o.start(t); o.stop(t+3.3);
+    });
+  };
+}
+function boot(){
+  const C=window.AudioContext||window.webkitAudioContext; if(!C) return; if(!A) A=new C();
+  A.resume().then(()=>{ if(!ready && A.state==='running'){ ready=true; build(); } }).catch(()=>{});
+}
+boot();  /* если автозвук заблокирован — включится при первом нажатии/касании */
+['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,boot,{passive:true}));
+function setPad(g,cutoff,driveExtra){
+  if(!ready) return; const n=A.currentTime;
+  padG.gain.setTargetAtTime(g,n,.5);
+  if(dist) dist.curve = dist.curve; // no-op guard
+}
+function stab(big){ if(ready && window.__mgStab) window.__mgStab(big?55:82.4, big); }
+function bell(){ if(ready && window.__mgBell) window.__mgBell(); }
+
+/* ===== экранные удары ===== */
+const flash=document.getElementById('flash');
+function hit(big){
+  document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
+  flash.classList.remove('on'); void flash.offsetWidth; flash.classList.add('on');
+  stab(big);
+}
+
+/* ===== частицы: золотая пыль/угли, летящие вверх ===== */
+const cv=document.getElementById('pt'), cx=cv.getContext('2d'); let W=0,H=0; const P=[];
+function rs(){ W=cv.width=innerWidth; H=cv.height=innerHeight; } rs(); addEventListener('resize',rs);
+for(let i=0;i<60;i++) P.push({x:rnd(0,W),y:rnd(0,H),r:rnd(.7,2.2),v:rnd(.2,.55),ph:rnd(0,6.28),bleed:0});
+let bleedGlobal=0;
+if(!reduce)(function draw(){
+  cx.clearRect(0,0,W,H);
+  P.forEach(p=>{
+    p.y-=p.v; p.x+=Math.sin(performance.now()/1000*.5+p.ph)*.3;
+    if(p.y<-6){ p.y=H+6; p.x=rnd(0,W); }
+    const c = bleedGlobal>Math.random() ? '140,15,28' : '231,193,90';
+    cx.fillStyle='rgba('+c+','+(.25+.55*Math.abs(Math.sin(p.ph+performance.now()/1000)))+')';
+    cx.beginPath(); cx.arc(p.x,p.y,p.r,0,6.283); cx.fill();
+  });
+  requestAnimationFrame(draw);
+})();
+
+/* ===== трещины: появляются по ходу монолога, к финалу наливаются кровью ===== */
+const cracksSvg=document.getElementById('cracks');
+const PATHS=[
+ "M500 40 L470 160 L510 210 L480 300 L520 360",
+ "M120 500 L220 486 L250 520 L340 500 L380 540",
+ "M880 300 L800 330 L790 370 L730 380",
+ "M500 960 L470 830 L520 780 L490 700",
+ "M60 200 L140 220 L150 260 L210 270",
+ "M940 640 L860 630 L840 590 L780 600"
+];
+let crackI=0;
+function addCrack(){
+  if(crackI>=PATHS.length) return;
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('class','crack'); p.setAttribute('pathLength','1'); p.setAttribute('d',PATHS[crackI++]);
+  cracksSvg.appendChild(p);
+}
+function bleedCracks(){ cracksSvg.classList.add('bleed'); }
+
+/* ===== сценарий ===== */
+const S=[
+ {t:"И создан был мир",hold:2100,lit:true},
+ {t:"За 7 дней и 7 ночей",hold:2100},
+ {t:"И получился он идеальным",hold:2600,big:true,crack:true},
+ {t:"Ибо Бог делал его",hold:2000},
+ {t:"И сделал Бог по своему образу и подобию творений",hold:2900},
+ {t:"И понял тогда",hold:2200,bell:true,crack:true},
+ {t:"Что они не должны быть идеальными",hold:2800,big:true,crack:true},
+ {t:"И из бесконечной любви подарил им свободу выбора",hold:3000,bell:true},
+ {t:"Построив великий генератор чудес",hold:2600,crack:true},
+ {t:"Идеальность была сломана",hold:2900,big:true,bleed:true,crack:true},
+ {t:"И так под бесконечной любовью его пошли Адам и Ева и дети их",hold:3200,crack:true},
+ {t:"Каин, Авель, Сиф",hold:4200,big:true,names:true}
+];
+
+const stage=document.getElementById('stage');
+let prevEl=null;
+function showLine(L){
+  if(prevEl){ prevEl.classList.add('leave'); const p=prevEl; setTimeout(()=>p.remove(),520); }
+  const el=document.createElement('div'); el.className='ln'+(L.big?' big':'');
+  el.textContent=L.names ? '' : L.t;
+  el.addEventListener('animationend', function done(ev){
+    if(ev.animationName === 'stamp'){ el.style.filter='none'; el.style.transform='none'; el.style.willChange='auto'; }
+  });
+  stage.appendChild(el); prevEl=el;
+  if(L.names){
+    ['Каин','Авель','Сиф'].forEach((name,i)=>{
+      setTimeout(()=>{ el.textContent = (el.textContent?el.textContent+', ':'')+name; hit(true); }, i*760);
+    });
+  }
+}
+
+async function run(){
+  document.getElementById('white').addEventListener('animationend',e=>e.target.remove());
+  document.body.classList.add('lit');
+  await sleep(1600);
+  for(const L of S){
+    showLine(L);
+    if(L.names){ /* удары уже проигрываются по ходу showLine */ }
+    else hit(!!L.big);
+    if(L.bell) setTimeout(bell,180);
+    if(L.crack) setTimeout(addCrack,260);
+    if(L.bleed){ bleedGlobal=1; bleedCracks(); document.getElementById('flashRed').classList.add('on'); }
+    await sleep(L.hold);
+  }
+  if(!AUTO_RETURN) return;
+  document.getElementById('out').classList.add('on');
+  await sleep(1700);
+  location.href=RETURN_TO;
+}
+run();
+</script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>...</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap">
+<style>
+:root{--ink:74,34,42;--cold:#0b0c10;--serif:'Cormorant Garamond','EB Garamond',Georgia,'Times New Roman',serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#e2c3bb}
+
+/* слои: перламутрово-телесный свет → масса тел → холод */
+.bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 50% 45%,#fbf1ea 0%,#ecd3ca 55%,#e2c3bb 100%)}
+svg.mass{position:fixed;inset:0;width:100%;height:100%;z-index:1;opacity:.95;transition:opacity 3.5s;
+  filter:drop-shadow(0 0 40px rgba(255,255,255,.75))}
+.cold{position:fixed;inset:0;z-index:2;background:var(--cold);opacity:0;transition:opacity 4s}
+body.solo .cold{opacity:1}
+.vig{position:fixed;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at center,transparent 50%,rgba(60,20,28,.35) 100%);transition:opacity 4s}
+body.solo .vig{opacity:0}
+
+/* хор: каждая строка — несколько наложенных голосов */
+.stage{position:fixed;inset:0;z-index:3;display:grid;place-items:center;padding:0 1.2rem}
+.stack{grid-area:1/1;display:grid;max-width:94vw;text-align:center;transition:opacity .9s}
+.stack.gone{opacity:0}
+.v{grid-area:1/1;font:italic 500 var(--fs,clamp(2rem,6.4vw,4.6rem))/1.15 var(--serif);text-wrap:balance;
+  color:rgba(var(--ink),.55);mix-blend-mode:multiply;text-shadow:0 0 18px rgba(255,255,255,.6);
+  opacity:0;transform:translate(var(--x),var(--y));
+  animation:vin 1.2s var(--d) forwards,drift 7s var(--d) ease-in-out infinite alternate}
+@keyframes vin{from{opacity:0;filter:blur(12px)}to{opacity:1;filter:blur(0)}}
+@keyframes drift{from{transform:translate(var(--x),var(--y))}to{transform:translate(var(--x2),var(--y2))}}
+.v.solo{mix-blend-mode:normal;color:#d3d4dc;text-shadow:none;font-style:normal;letter-spacing:.02em}
+
+/* вход: ослепительный свет, глаза привыкают */
+.white{position:fixed;inset:0;z-index:10;background:#fff;pointer-events:none;animation:wh 2.8s ease-out forwards}
+@keyframes wh{0%,15%{opacity:1}100%{opacity:0}}
+.out{position:fixed;inset:0;z-index:20;background:#000;opacity:0;pointer-events:none;transition:opacity 1.6s}
+
+@media (prefers-reduced-motion:reduce){.v{animation:vin .01s var(--d) forwards}.white{animation:none;display:none}}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<svg class="mass" id="mass" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <filter id="goo" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="20" result="b"/>
+      <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="g"/>
+      <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="g" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g id="blobs" filter="url(#goo)"></g>
+</svg>
+<div class="cold"></div>
+<div class="stage" id="stage"></div>
+<div class="vig"></div><div class="white" id="white"></div><div class="out" id="out"></div>
+
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd = (a,b) => a + Math.random()*(b-a);
+const AUTO_RETURN = true, RETURN_TO = 'index.html';
+
+/* ===== масса тел: круги, слипающиеся в один организм ===== */
+const NS='http://www.w3.org/2000/svg', gEl=document.getElementById('blobs');
+const TONES=['#e8c8bd','#d9a89f','#f3ddd3','#c98f8c','#eab7ab','#f0d0c6'];
+const blobs=[];
+for(let i=0;i<16;i++){
+  const c=document.createElementNS(NS,'circle'); c.setAttribute('fill',TONES[i%TONES.length]); gEl.appendChild(c);
+  blobs.push({c,hx:rnd(170,830),hy:rnd(170,830),r:rnd(70,150),ph:rnd(0,6.28),sp:rnd(.15,.4),ax:rnd(60,140),ay:rnd(60,140)});
+}
+let pull=0, pullT=0;
+function frame(ms){
+  const t=ms/1000; pull+=(pullT-pull)*.012;
+  blobs.forEach(b=>{
+    let x=b.hx+Math.sin(t*b.sp+b.ph)*b.ax, y=b.hy+Math.cos(t*b.sp*.8+b.ph)*b.ay;
+    x+=(500-x)*pull*.92; y+=(480-y)*pull*.92;
+    const r=b.r*(1+.06*Math.sin(t*1.2+b.ph))*(1+pull*.4);
+    b.c.setAttribute('cx',x); b.c.setAttribute('cy',y); b.c.setAttribute('r',r);
+  });
+  if(!reduce) requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame); if(reduce) setInterval(()=>frame(performance.now()),1500);
+
+/* ===== звук: хор из множества голосов, сходящийся в один ===== */
+let A=null, M=null, NG=null, ready=false; const V=[];
+const BASE=[146.8,185,220,293.7,146.8,220,293.7,370,185,440,293.7,587];
+const st={v:0,spread:45,g:.03,noise:0};
+function build(){
+  M=A.createGain(); M.gain.value=.9; M.connect(A.destination);
+  const len=A.sampleRate*3, ir=A.createBuffer(2,len,A.sampleRate);
+  for(let c=0;c<2;c++){ const d=ir.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.4); }
+  const rev=A.createConvolver(); rev.buffer=ir; const rg=A.createGain(); rg.gain.value=.9; rev.connect(rg); rg.connect(M);
+  const lp=A.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1600; lp.connect(M); lp.connect(rev);
+  const lfo=A.createOscillator(), lg=A.createGain(); lfo.frequency.value=5.2; lg.gain.value=7; lfo.connect(lg); lfo.start();
+  BASE.forEach((f,i)=>{
+    const o=A.createOscillator(), g=A.createGain(); o.type=i%3?'triangle':'sine'; o.frequency.value=f;
+    lg.connect(o.detune); g.gain.value=0; o.connect(g); g.connect(lp); o.start(); V.push({o,g,s:Math.random()*2-1});
+  });
+  const b=A.createBuffer(1,A.sampleRate*2,A.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const n=A.createBufferSource(), bp=A.createBiquadFilter(); n.buffer=b; n.loop=true; bp.type='bandpass'; bp.frequency.value=1500; bp.Q.value=.7;
+  NG=A.createGain(); NG.gain.value=0; n.connect(bp); bp.connect(NG); NG.connect(M); NG.connect(rev); n.start();
+  apply();
+}
+function apply(){
+  if(!ready) return; const n=A.currentTime;
+  V.forEach((x,i)=>{ x.g.gain.setTargetAtTime(i<st.v?st.g:0,n,.4); x.o.detune.setTargetAtTime(x.s*st.spread,n,.9); });
+  NG.gain.setTargetAtTime(st.noise,n,.5);
+}
+function setAudio(v,spread,g,noise){ Object.assign(st,{v,spread,g,noise}); apply(); }
+function boot(){
+  const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
+  if(!A) A=new C();
+  A.resume().then(()=>{ if(!ready && A.state==='running'){ ready=true; build(); } }).catch(()=>{});
+}
+boot();  /* если автозвук заблокирован — включится при первом нажатии/касании */
+['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,boot,{passive:true}));
+
+/* ===== монолог: голоса, сколько их, размах, размер, масса, звук ===== */
+const S=[
+ {t:"Больше нет страха",n:9,s:22,hold:2600,pull:.05,mass:.95,a:[8,45,.03,.012]},
+ {t:"Нет боли",n:9,s:26,hold:2000,pull:.1,mass:.95,a:[8,45,.03,.012]},
+ {t:"Нет переживаний",n:9,s:22,hold:2000,pull:.15,mass:.95,a:[8,40,.03,.012]},
+ {t:"Нет страданий",n:9,s:28,hold:2000,pull:.2,mass:.95,a:[8,40,.03,.012]},
+ {t:"Только вечное блаженство",n:10,s:18,hold:2700,pull:.3,mass:1,a:[10,30,.03,.015]},
+ {t:"В Его царстве",n:10,s:14,hold:2700,pull:.4,mass:1,a:[10,25,.03,.015]},
+ {t:"Мы всё ближе",n:9,s:6,hold:3200,pull:.75,mass:1,a:[12,8,.028,.018]},
+ {t:"МЫ",n:12,s:2,fs:'clamp(6rem,26vw,20rem)',hold:3300,pull:1,mass:1,a:[12,0,.03,.02]},
+ {t:"Я",n:5,s:10,fs:'clamp(5rem,20vw,15rem)',hold:1600,pull:1,mass:.8,a:[6,0,.04,.01]},
+ {t:"Я",n:3,s:12,fs:'clamp(4rem,15vw,11rem)',hold:1400,pull:1,mass:.55,a:[3,0,.05,.006]},
+ {t:"Я",n:2,s:14,fs:'clamp(3rem,11vw,8rem)',hold:1200,pull:1,mass:.3,a:[2,0,.05,.003]},
+ {t:"Я",n:1,s:0,fs:'clamp(2.4rem,8vw,6rem)',hold:1800,pull:1,mass:.08,a:[1,0,.06,0]},
+ {t:"Я скучаю по тебе, любимая",n:1,s:0,fs:'clamp(1.2rem,2.6vw,1.7rem)',solo:true,hold:9000,pull:1,mass:0,a:[1,0,.035,0]}
+];
+const stage=document.getElementById('stage'), massEl=document.getElementById('mass');
+let prev=null;
+function show(L){
+  if(prev){ const p=prev; p.classList.add('gone'); setTimeout(()=>p.remove(),1000); }
+  const stack=document.createElement('div'); stack.className='stack'; if(L.fs) stack.style.setProperty('--fs',L.fs);
+  for(let i=0;i<L.n;i++){
+    const v=document.createElement('div'); v.className='v'+(L.solo?' solo':''); v.textContent=L.t;
+    v.style.setProperty('--x',rnd(-L.s,L.s)+'px'); v.style.setProperty('--y',rnd(-L.s*.6,L.s*.6)+'px');
+    v.style.setProperty('--x2',rnd(-L.s,L.s)+'px'); v.style.setProperty('--y2',rnd(-L.s*.6,L.s*.6)+'px');
+    v.style.setProperty('--d',(i*.07)+'s');
+    stack.appendChild(v);
+  }
+  stage.appendChild(stack); prev=stack;
+  pullT=L.pull; massEl.style.opacity=L.mass; setAudio(...L.a);
+  if(L.solo) document.body.classList.add('solo');
+}
+
+async function run(){
+  document.getElementById('white').addEventListener('animationend',e=>e.target.remove());
+  await sleep(2800);
+  for(const L of S){ show(L); await sleep(L.hold); }
+  if(!AUTO_RETURN) return;
+  setAudio(1,0,0,0);
+  document.getElementById('out').style.opacity=1;
+  await sleep(1900); location.href=RETURN_TO;
+}
+run();
+</script>
+</body>
+</html>

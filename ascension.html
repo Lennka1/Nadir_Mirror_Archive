@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>...</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap">
+<style>
+:root{--serif:'Cinzel','Trajan Pro','Times New Roman',Georgia,serif;--mono:'Courier New',monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000}
+#scr{position:fixed;inset:0;color:#cfd8d1;font-family:var(--mono)}
+#log{position:absolute;left:6vw;right:6vw;top:14vh;font-size:clamp(.85rem,2.2vw,1.1rem);line-height:2}
+.ln{white-space:pre-wrap}
+.ln .tag{color:#7d8a82}
+.ln .tx{unicode-bidi:isolate}
+.ln.cut::after{content:" ▮";color:#c0261c}
+.fr{position:absolute;font-family:var(--mono);color:#e6ece7;white-space:nowrap;text-shadow:0 0 8px rgba(255,255,255,.4)}
+#cnt{position:absolute;left:0;right:0;bottom:12vh;text-align:center;opacity:0}
+#cl{font-size:.8rem;letter-spacing:.3em;color:#7d8a82;margin-bottom:.8rem}
+#cn{font-size:clamp(2rem,9vw,5.5rem);letter-spacing:.05em;color:#e6ece7;font-variant-numeric:tabular-nums}
+#cn.zero{color:#c0261c}
+#slit{position:fixed;left:50%;top:0;height:100%;width:2px;background:#fff;box-shadow:0 0 50px 12px #fff;transform:translateX(-50%);opacity:0;z-index:5}
+#fin{position:fixed;inset:0;z-index:4;background:#f3f5f5;color:#23282b;font-family:var(--serif);
+  display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 1.5rem}
+#fin h1{font-weight:700;font-size:clamp(2rem,9vw,5rem);letter-spacing:.25em;margin:0 0 2.5rem;padding-left:.25em;opacity:0;transition:opacity 4s}
+#fin p{margin:.5rem 0;font-size:clamp(.95rem,2.6vw,1.25rem);letter-spacing:.12em;line-height:1.8;opacity:0;transition:opacity 3s}
+#fin p.red{color:#8a1c16;font-size:clamp(1.15rem,3.4vw,1.7rem);margin-top:2rem}
+#fin .on{opacity:1!important}
+#back{margin-top:3rem;background:none;border:0;font-family:inherit;font-size:.75rem;letter-spacing:.3em;color:#8b969d;cursor:pointer;opacity:0;transition:opacity 2s}
+#back:hover,#back:focus-visible{color:#23282b;outline:none}
+</style>
+</head>
+<body>
+<div id="scr">
+  <div id="log"></div>
+  <div id="cnt"><div id="cl">ЖИВЫХ ЗА ПРЕДЕЛАМИ СОДОМА</div><div id="cn">2 379 000 000</div></div>
+</div>
+<div id="slit"></div>
+<div id="fin">
+  <h1 id="h">ВОЗНЕСЕНИЕ</h1>
+  <p>Без огня. Без боли. Без свидетелей.</p>
+  <p>Мир закончился за одно мгновение.</p>
+  <p>Содом никто не спасал.</p>
+  <p class="red">Его оставили на потом.</p>
+  <button id="back" type="button">ВЕРНУТЬСЯ В АРХИВ</button>
+</div>
+<script>
+const $ = id => document.getElementById(id), sleep = ms => new Promise(r=>setTimeout(r,ms));
+const calm = matchMedia('(prefers-reduced-motion:reduce)').matches;
+const RETURN_TO = 'index.html';
+function leave(){ location.href = RETURN_TO; }
+addEventListener('keydown', e=>{ if(e.key==='Escape') leave(); });   /* аварийный выход для ведущего */
+$('back').addEventListener('click', leave);
+
+/* ---------- звук (всё синтезируется) ---------- */
+let ctx=null, sg=null, dg=null, drone=null, base=0;
+function initAudio(){
+  if(ctx){ ctx.resume(); return; }
+  try{
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const len = ctx.sampleRate*2, b = ctx.createBuffer(1,len,ctx.sampleRate), d = b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    const n = ctx.createBufferSource(); n.buffer=b; n.loop=true;
+    const bp = ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2200; bp.Q.value=.6;
+    sg = ctx.createGain(); sg.gain.value=0; n.connect(bp); bp.connect(sg); sg.connect(ctx.destination); n.start();
+    drone = ctx.createOscillator(); drone.type='sine'; drone.frequency.value=38;
+    dg = ctx.createGain(); dg.gain.value=0; drone.connect(dg); dg.connect(ctx.destination); drone.start();
+  }catch(e){}
+}
+const hiss = (v,t=.05)=>{ if(sg) sg.gain.setTargetAtTime(v,ctx.currentTime,t); };
+const sub  = (v,f,t=1)=>{ if(dg){ dg.gain.setTargetAtTime(v,ctx.currentTime,t); drone.frequency.setTargetAtTime(f,ctx.currentTime,t); } };
+function burst(){ hiss(.4,.004); setTimeout(()=>hiss(base,.03),140); }
+function choir(){
+  if(!ctx) return;
+  const t = ctx.currentTime, g = ctx.createGain(); g.connect(ctx.destination);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.16,t+7); g.gain.setValueAtTime(.16,t+9); g.gain.exponentialRampToValueAtTime(.0001,t+20);
+  [130.8,196,261.6,329.6,392,523.3,784,1046.5].forEach((f,i)=>{
+    [0,1].forEach(k=>{ const o = ctx.createOscillator(); o.type = k?'triangle':'sine'; o.frequency.value = f*(1+(k?.004:-.003)*(i%3+1)); o.connect(g); o.start(t); o.stop(t+20.5); });
+  });
+  const s = ctx.createOscillator(), sgn = ctx.createGain();   // удар в момент вспышки
+  s.type='sine'; s.frequency.setValueAtTime(80,t); s.frequency.exponentialRampToValueAtTime(20,t+2);
+  sgn.gain.setValueAtTime(.9,t); sgn.gain.exponentialRampToValueAtTime(.0001,t+2.2); s.connect(sgn); sgn.connect(ctx.destination); s.start(t); s.stop(t+2.3);
+}
+
+/* ---------- тряска ---------- */
+let shakePx = 0;
+setInterval(()=>{ if(calm) return; $('scr').style.transform = shakePx ? `translate(${(Math.random()-.5)*shakePx}px,${(Math.random()-.5)*shakePx}px)` : ''; }, 40);
+
+/* ---------- сцена 1: эфир обрывается ---------- */
+const LINES = [
+  {tag:"ЛОНДОН    >", lang:"en", text:" This is London. Repeat, the sky above the Thames is opening—"},
+  {tag:"ПАРИЖ     >", lang:"fr", text:" Ici Paris. La lumière descend sur la Seine, elle—"},
+  {tag:"БЕРЛИН    >", lang:"de", text:" Hier ist Berlin. Die Straßen heben sich, wir sehen, wie die Straßen—"},
+  {tag:"ТОКИО     >", lang:"ja", text:" こちら東京。空が、空が開いて、みんなが—"},
+  {tag:"МОСКВА    >", lang:"ru", text:" Москва, приём, приём. Они поднимаются вверх, кто-нибудь—"},
+  {tag:"ИЕРУСАЛИМ >", lang:"he", dir:"rtl", text:" הוא חזר. הוא חזר, והוא—"}
+];
+async function say(item, speed){
+  if(typeof item === 'string') item = {tag:'', text:item};
+  const p = document.createElement('div'); p.className='ln';
+  const tg = document.createElement('span'); tg.className='tag'; tg.textContent = item.tag;
+  const tx = document.createElement('span'); tx.className='tx'; if(item.lang) tx.lang = item.lang; if(item.dir) tx.dir = item.dir;
+  p.appendChild(tg); p.appendChild(tx); $('log').appendChild(p);
+  for(const ch of item.text){ tx.textContent += ch; await sleep(speed); }
+  p.classList.add('cut'); burst(); await sleep(350);
+}
+const FRAG = ["свет","они","мама","не смотри","вверх","холодно","тихо","Господи","нет нет нет","—",
+  "the light","please","don't look","God","Mutter","nicht hinsehen","mère","regardez","母さん","光","上へ","אמא","אור","למעלה","мама","вверх","вверх"];
+async function flood(){
+  for(let i=0;i<34;i++){
+    const f = document.createElement('div'); f.className='fr';
+    f.textContent = FRAG[Math.floor(Math.random()*FRAG.length)];
+    f.style.left = (Math.random()*80)+'vw'; f.style.top = (8+Math.random()*70)+'vh';
+    f.style.fontSize = (.8+Math.random()*2.2)+'rem'; f.style.opacity = .35+Math.random()*.65;
+    $('scr').appendChild(f);
+    base = Math.min(.22, .04+i*.006); hiss(base,.1); shakePx = 2+i*.5; sub(.25+i*.01, 38+i*.4, .3);
+    if(i%4===0) burst();
+    await sleep(Math.max(35, 320-i*10));
+  }
+}
+/* ---------- сцена 2: счётчик ---------- */
+async function count(){
+  const cn = $('cn'); $('cnt').style.opacity = 1; const start = 2379000000, dur = 6200, t0 = performance.now();
+  await new Promise(res=>{
+    (function tick(now){
+      const t = Math.min(1,(now-t0)/dur); let v = Math.round(start*Math.pow(1-t,2.2));
+      let s = v.toLocaleString('ru-RU'); if(Math.random()<.25) s = s.replace(/\d/, ()=>Math.floor(Math.random()*10));
+      cn.textContent = s; shakePx = 8+t*26; hiss(.2+t*.25,.05); sub(.4+t*.4, 45+t*20, .2);
+      if(t<1) requestAnimationFrame(tick); else res();
+    })(t0);
+  });
+  cn.textContent = '0'; cn.classList.add('zero');
+}
+/* ---------- сцена 3: тишина, щель, свет ---------- */
+async function finale(){
+  shakePx = 0; base = 0; hiss(0,.005); sub(0,30,.01);
+  await sleep(1200); $('scr').style.transition='opacity .6s'; $('scr').style.opacity=0;
+  await sleep(2800);                                   // абсолютная тишина
+  const sl = $('slit'); sl.style.transition='opacity 1.5s'; sl.style.opacity=1;
+  sub(.5, 26, 1.2);
+  await sleep(2200);
+  sl.style.transition = calm ? 'width .3s' : 'width 3.6s cubic-bezier(.75,0,1,.35)'; sl.style.width='120vw';
+  await sleep(calm?300:3300); sub(0,20,.05);
+  $('fin').style.display='flex'; choir();
+  await sleep(400); sl.style.display='none';
+  await sleep(1500); $('h').classList.add('on');
+  const ps = [...document.querySelectorAll('#fin p')];
+  await sleep(4200);
+  for(const p of ps){ p.classList.add('on'); await sleep(p.classList.contains('red')?0:2800); }
+  await sleep(5000); $('back').classList.add('on'); $('back').style.opacity=1;
+}
+
+async function run(){
+  initAudio();
+  await sleep(1200);
+  await say("1947. ЭФИР. ВСЕ ЧАСТОТЫ.", 40); await sleep(500);
+  for(let i=0;i<LINES.length;i++){ base = .03+i*.02; hiss(base,.2); await say(LINES[i], Math.max(14, 34-i*5)); }
+  await flood();
+  await count();
+  await finale();
+}
+addEventListener('pointerdown', initAudio, {once:true});
+addEventListener('keydown', initAudio, {once:true});
+run();
+</script>
+</body>
+</html>

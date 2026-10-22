@@ -1,0 +1,2883 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>NADIR ARCHIVE TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0a0a;
+    --bg-panel: #0d0f0d;
+    --green: #2be873;
+    --green-dim: #328a52;
+    --green-bright: #b3f5c8;
+    --amber: #e0a52e;
+    --red: #d4324a;
+    --line: #1c4028;
+    --glow: 0 0 6px currentColor;
+    --bezel-gap: 26px;
+    --screen-radius: 46px;
+    font-size: 16px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background: #050403;
+    color: var(--green);
+    font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+    overflow: hidden;
+  }
+
+  /* ---------- monitor case / bezel ---------- */
+  /* the plastic shell of the CRT, sitting behind the "glass" screen */
+  .monitor-bezel{
+    pointer-events:none;
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 120% 90% at 30% 15%, #2b2b2b 0%, #171716 35%, #0a0a09 68%, #030302 100%);
+  }
+  .monitor-bezel::before{
+    /* faint brushed-plastic texture */
+    content:""; position:absolute; inset:0;
+    background: repeating-linear-gradient(112deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px);
+    mix-blend-mode: overlay; opacity:0.6;
+  }
+  .monitor-bezel::after{
+    /* recessed lip around the screen cutout, gives the case depth */
+    content:""; position:absolute;
+    inset: calc(var(--bezel-gap) - 12px);
+    border-radius: calc(var(--screen-radius) + 12px);
+    box-shadow:
+      inset 0 0 2px 1px rgba(255,255,255,0.05),
+      inset 0 10px 26px 8px rgba(0,0,0,0.85),
+      0 0 24px 4px rgba(0,0,0,0.7);
+  }
+
+  /* ---------- CRT overlay (all layered on the curved "glass" area) ---------- */
+  .crt-overlay{
+    pointer-events:none;
+    position:fixed; inset: var(--bezel-gap); z-index: 50;
+    border-radius: var(--screen-radius);
+    overflow:hidden;
+    background: linear-gradient(
+      rgba(18,16,16,0) 50%,
+      rgba(0,0,0,0.3) 50%
+    );
+    background-size: 100% 4px;
+  }
+  .crt-vignette{
+    pointer-events:none;
+    position:fixed; inset: var(--bezel-gap); z-index: 51;
+    border-radius: var(--screen-radius);
+    /* stronger, tighter falloff = the "potbelly" bulge look */
+    background: radial-gradient(ellipse 88% 82% at 50% 48%, transparent 60%, rgba(0,0,0,0.22) 85%, rgba(0,0,0,0.42) 100%);
+    box-shadow: inset 0 0 40px 8px rgba(0,0,0,0.3);
+  }
+  .crt-flicker{
+    pointer-events:none;
+    position:fixed; inset: var(--bezel-gap); z-index: 52;
+    border-radius: var(--screen-radius);
+    background: rgba(62,201,107,0.012);
+    animation: flicker 6.2s infinite;
+  }
+  @keyframes flicker{
+    0%,97%,100%{ opacity: 0; }
+    98%{ opacity: 1; }
+    99%{ opacity: 0.3; }
+  }
+
+  /* diagonal glass reflection — reads as a curved, glossy tube face */
+  .crt-glass{
+    pointer-events:none;
+    position:fixed; inset: var(--bezel-gap); z-index: 53;
+    border-radius: var(--screen-radius);
+    background: linear-gradient(128deg,
+      rgba(255,255,255,0.06) 0%,
+      rgba(255,255,255,0.025) 12%,
+      rgba(255,255,255,0.0) 26%,
+      rgba(255,255,255,0.0) 78%,
+      rgba(255,255,255,0.015) 100%);
+    mix-blend-mode: screen;
+  }
+  /* thin glowing rim = the edge of the curved glass catching light */
+  .crt-rim{
+    pointer-events:none;
+    position:fixed; inset: var(--bezel-gap); z-index: 54;
+    border-radius: var(--screen-radius);
+    box-shadow:
+      inset 0 0 0 1px rgba(180,255,210,0.10),
+      inset 0 0 22px rgba(120,255,170,0.06);
+  }
+
+  /* ---------- hard glitch on navigation ---------- */
+  @keyframes hardglitch{
+    0%{ transform:translate(0,0); filter:none; clip-path:inset(0 0 0 0); }
+    8%{ transform:translate(-6px,2px); filter:hue-rotate(25deg) saturate(1.6); clip-path:inset(10% 0 60% 0); }
+    16%{ transform:translate(5px,-3px); clip-path:inset(55% 0 10% 0); }
+    24%{ transform:translate(-4px,1px) skewX(2deg); filter:none; clip-path:inset(0 0 0 0); }
+    32%{ transform:translate(3px,-2px); filter:hue-rotate(-15deg); clip-path:inset(30% 0 40% 0); }
+    40%{ transform:translate(-2px,2px); clip-path:inset(0 0 0 0); }
+    50%{ transform:translate(0,0); opacity:0.8; }
+    62%{ transform:translate(4px,0); clip-path:inset(70% 0 5% 0); }
+    74%{ transform:translate(-3px,1px); clip-path:inset(0 0 0 0); }
+    100%{ transform:translate(0,0); opacity:1; filter:none; clip-path:inset(0 0 0 0); }
+  }
+  .glitch-active{ animation: hardglitch 0.24s steps(2,end); }
+
+  /* ---------- section corruption levels ---------- */
+  .corrupt-0 .crt-flicker{ display:none; }
+  .corrupt-1 .crt-flicker{ animation-duration: 8s; }
+  .corrupt-2 .crt-flicker{ animation-duration: 5s; background: rgba(224,165,46,0.02); }
+  .corrupt-3 .crt-flicker{ animation-duration: 2.2s; background: rgba(212,50,74,0.035); }
+  .corrupt-3 .crt-vignette{ background: radial-gradient(ellipse at center, transparent 50%, rgba(120,10,20,0.4) 100%); }
+  .corrupt-3 header{ border-bottom-color: var(--red); }
+  .corrupt-3 .list-title{ border-bottom-color: var(--red); }
+
+  /* ---------- layout ---------- */
+  .wrap{
+    position:fixed; z-index:1;
+    inset: var(--bezel-gap);
+    border-radius: var(--screen-radius);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    text-shadow: 0 0 2px rgba(43,232,115,0.4);
+    animation: bodyflicker 0.15s infinite;
+    background: var(--bg);
+  }
+  @keyframes bodyflicker{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.985; }
+    52%{ opacity:0.96; }
+    54%{ opacity:0.985; }
+  }
+
+  header{
+    border-bottom: 2px solid var(--green);
+    padding: 16px 22px;
+    display:flex; justify-content:space-between; align-items:baseline;
+    flex-shrink:0;
+    text-shadow: var(--glow);
+  }
+  header .brand{
+    font-family:'VT323', monospace; font-weight:normal; letter-spacing:2px;
+    color:var(--green); font-size:1.8rem; line-height:1;
+  }
+  header .brand small{
+    display:block; font-weight:normal; letter-spacing:1px; color:var(--amber);
+    font-size:0.65rem; margin-top:6px; font-family:'JetBrains Mono', monospace;
+    text-shadow:none; overflow-wrap:break-word;
+  }
+  header .stamp{
+    font-size:0.75rem; color: var(--bg); background: var(--green);
+    border:1px solid var(--green); padding:4px 10px; letter-spacing:1px;
+    font-weight:bold; text-shadow:none;
+  }
+
+  .body-grid{
+    flex:1; display:flex; min-height:0;
+  }
+
+  nav{
+    width: 250px; flex-shrink:0;
+    border-right: 1px solid var(--green);
+    padding: 18px 14px;
+    overflow-y:auto;
+    background: rgba(0,255,65,0.015);
+  }
+  nav .cat{
+    display:block; width:100%; text-align:left;
+    background: transparent; border:1px solid var(--green-dim); color: var(--green);
+    font-family:inherit; font-size:0.85rem; letter-spacing:0.5px;
+    padding: 12px 14px; cursor:pointer;
+    margin-bottom:10px; transition: all 0.2s;
+  }
+  nav .cat::before{ content:"📁 "; }
+  nav .cat:hover{ background: rgba(0,255,65,0.1); box-shadow: var(--glow); transform: translateX(4px); }
+  nav .cat.active{ color: var(--bg); background: var(--green); box-shadow: var(--glow); border-color: var(--green); }
+  nav .cat .count{ color: inherit; opacity:0.7; font-size:0.75rem; }
+
+  .random-btn{
+    display:block; width:100%; text-align:center;
+    background: transparent; border:1px dashed var(--amber); color: var(--amber);
+    font-family:inherit; font-size:0.8rem; letter-spacing:0.5px;
+    padding: 10px 14px; cursor:pointer;
+    margin-bottom:16px; transition: all 0.2s;
+  }
+  .random-btn:hover{ background: rgba(224,165,46,0.12); box-shadow: 0 0 6px var(--amber); }
+
+  /* ---------- image skeleton loader ---------- */
+  .img-frame{ position:relative; margin:0 0 12px 0; background:#000; border:1px solid var(--line); }
+  .article .img-frame{ margin:0 0 22px 0; width:min(100%, 620px); border-color: var(--green-dim); }
+  .img-skeleton{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background: repeating-linear-gradient(100deg, rgba(43,232,115,0.05) 0, rgba(43,232,115,0.05) 2px, transparent 2px, transparent 6px), var(--bg-panel);
+    color:var(--green-dim); font-size:0.68rem; letter-spacing:1px; text-align:center; padding:8px;
+    animation: skeleton-pulse 1.3s ease-in-out infinite;
+  }
+  .img-skeleton.hide{ display:none; }
+  .img-skeleton-static{ animation-duration: 2.6s; opacity:0.6; }
+  @keyframes skeleton-pulse{ 0%,100%{ opacity:0.45; } 50%{ opacity:0.9; } }
+
+  .search-box{
+    margin: 0 0 16px 0;
+    border:1px solid var(--green);
+    background: rgba(0,255,65,0.03);
+  }
+  .search-box input{
+    width:100%; background:transparent; border:none; outline:none;
+    color: var(--green-bright); font-family:inherit; padding:10px 12px; font-size:0.85rem;
+  }
+  .search-box input::placeholder{ color: var(--green-dim); }
+
+  main{
+    flex:1; overflow-y:auto; padding: 24px 32px 60px 32px;
+    min-width:0;
+  }
+
+  .breadcrumb{
+    color:var(--amber); font-size:0.8rem; margin-bottom:16px; letter-spacing:0.5px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .breadcrumb span{ cursor:pointer; }
+  .breadcrumb span:hover{ color: var(--green-bright); text-decoration:underline; }
+
+  .list-title{
+    color: var(--amber); font-family:'VT323', monospace; font-weight:normal;
+    font-size:2rem; letter-spacing:2px;
+    border-bottom:2px solid var(--green); padding-bottom:10px; margin-bottom:22px;
+    text-shadow: var(--glow); overflow-wrap:break-word;
+  }
+
+  .entry-grid{
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr)); gap:16px;
+  }
+  .entry-card{
+    border:1px solid var(--green); border-left:3px solid var(--green);
+    padding:16px 18px; cursor:pointer;
+    background: var(--bg-panel);
+    transition: all 0.2s;
+    position:relative;
+  }
+  .entry-card:hover{ background: rgba(0,255,65,0.07); box-shadow: var(--glow); transform: translateX(3px); }
+  .entry-card .tag{ color: var(--amber); font-size:0.7rem; letter-spacing:1px; font-weight:bold; }
+  .entry-card .badge-defunct{
+    display:inline-block; color: var(--bg); background:var(--red); border:1px solid var(--red);
+    font-size:0.65rem; letter-spacing:1px; padding:2px 6px; margin-left:8px; font-weight:bold;
+  }
+  .entry-card.locked{ border-color: var(--red); border-left-color: var(--red); }
+  .entry-card.locked:hover{ border-color: var(--red); background: rgba(255,0,64,0.08); box-shadow:0 0 10px var(--red); }
+  .entry-card.locked p{ color: var(--red); }
+  .entry-card.locked .tag::before{ content:"🔒 "; }
+  .entry-card h3{ margin: 8px 0 8px 0; color: var(--green-bright); font-size:1.1rem; font-weight:bold; letter-spacing:0.5px; overflow-wrap:break-word;}
+  .entry-card p{ margin:0; color: var(--green-dim); font-size:0.82rem; line-height:1.45; }
+
+  .entry-card .img-frame{ height:150px; }
+  .entry-card .faction-image{
+    display:block; width:100%; height:100%; object-fit:contain;
+    background:#000;
+    filter: grayscale(1) contrast(1.1) brightness(1.05);
+    opacity:0; transition: opacity 0.35s;
+  }
+  .entry-card .faction-image.loaded{ opacity:1; }
+  .entry-card:hover .img-frame{ border-color:var(--green-dim); }
+  .article .img-frame{ height:240px; }
+  .article-image{
+    display:block; width:100%; height:100%; object-fit:contain;
+    background:#000;
+    filter: grayscale(1) contrast(1.1) brightness(1.05);
+    opacity:0; transition: opacity 0.35s;
+  }
+  .article-image.loaded{ opacity:1; }
+
+  /* ---------- CRT-обработанные арты (уже зелёные, серый фильтр не нужен) ---------- */
+  .article .img-frame.art-frame{ height:auto; aspect-ratio:16/9; width:min(100%, 620px); border-color:var(--green-dim); }
+  .art-image{
+    display:block; width:100%; height:100%; object-fit:cover; background:#000;
+    opacity:0; transition: opacity 0.35s;
+  }
+  .art-image.loaded{ opacity:1; }
+  .faction-divider{
+    grid-column:1 / -1; color:var(--bg); background:var(--amber); border:none;
+    padding:8px 14px; margin-top:6px; letter-spacing:2px; font-size:0.78rem; font-weight:bold;
+  }
+
+  .article{
+    max-width: 780px;
+  }
+  .article .tag{ color: var(--amber); font-size:0.8rem; letter-spacing:1px; font-weight:bold; }
+  .article .badge-defunct{
+    display:inline-block; color: var(--bg); background:var(--red); border:1px solid var(--red);
+    font-size:0.7rem; letter-spacing:1px; padding:3px 8px; margin-left:10px; font-weight:bold;
+  }
+  .article h2{
+    color: var(--green); font-family:'VT323', monospace; font-weight:normal;
+    font-size:2.4rem; letter-spacing:1px;
+    margin: 10px 0 20px 0; border-bottom:2px solid var(--green); padding-bottom:14px;
+    text-shadow: var(--glow); overflow-wrap:break-word;
+  }
+  .article .body-text p{
+    border-left: 3px solid var(--green); padding: 2px 0 2px 18px; position:relative;
+    margin: 0 0 16px 0; line-height:1.75; font-size:0.95rem; color: var(--green);
+  }
+  .article .body-text p::before{
+    content:">"; position:absolute; left:-3px; top:2px; color:var(--amber);
+    background:var(--bg); padding:0 4px 0 0;
+  }
+  .corrupted-word{
+    color: var(--red); text-shadow: 0 0 6px var(--red);
+  }
+  .article .motto{
+    font-style: italic; color: var(--amber); border-left:3px solid var(--amber);
+    padding: 6px 0 6px 18px; margin: 4px 0 22px 0; font-size:0.9rem;
+    background: rgba(255,176,0,0.05);
+  }
+  .article .denied{
+    color: var(--red); font-family:'VT323', monospace; font-size:1.3rem; letter-spacing:2px;
+    border: 2px solid var(--red); padding: 10px 16px; margin-bottom:18px;
+    display:inline-block; text-shadow: 0 0 10px var(--red);
+  }
+  .redacted-bar{
+    height: 0.95em; background: var(--red); opacity: 0.8;
+    margin-bottom: 12px; box-shadow: 0 0 6px var(--red);
+  }
+  .article .links{ margin-top:26px; padding-top:16px; border-top:1px solid var(--green); }
+  .article .links .lbl{ color: var(--amber); font-size:0.75rem; letter-spacing:1px; margin-bottom:10px; font-weight:bold;}
+  .article .link-btn{
+    display:inline-block; margin:3px 6px 3px 0; padding:7px 12px;
+    border:1px solid var(--green); color: var(--green); font-size:0.8rem; cursor:pointer;
+    transition: all 0.2s;
+  }
+  .article .link-btn:hover{ background:var(--green); color:var(--bg); box-shadow: var(--glow); }
+
+  .empty-note{
+    color: var(--green-dim); font-size:0.85rem; border:1px dashed var(--green-dim); padding:16px; margin-top:10px;
+  }
+
+  /* ---------- chronology timeline ---------- */
+  .timeline{ position:relative; padding-left:30px; max-width:720px; }
+  .timeline::before{
+    content:""; position:absolute; top:2px; bottom:2px; left:5px; width:2px;
+    background: linear-gradient(to bottom, var(--green), var(--green-dim));
+    box-shadow: 0 0 4px var(--green);
+  }
+  .timeline-item{
+    position:relative; padding:0 0 0 26px; margin-bottom:28px; cursor:pointer;
+    transition: transform 0.15s;
+  }
+  .timeline-item::before{
+    content:""; position:absolute; left:-30px; top:5px; width:12px; height:12px; border-radius:50%;
+    background: var(--bg); border:2px solid var(--green); box-shadow: var(--glow);
+    transition: all 0.2s; z-index:1;
+  }
+  .timeline-item:hover{ transform: translateX(4px); }
+  .timeline-item:hover::before{ background: var(--green); box-shadow: 0 0 10px var(--green), 0 0 18px var(--green); }
+  .timeline-item .timeline-date{
+    color: var(--amber); font-family:'VT323', monospace; font-size:1.3rem; letter-spacing:2px; line-height:1;
+  }
+  .timeline-item h3{
+    margin:6px 0 6px 0; color: var(--green-bright); font-size:1.05rem; font-weight:bold;
+    letter-spacing:0.3px; overflow-wrap:break-word;
+  }
+  .timeline-item p{ margin:0; color: var(--green-dim); font-size:0.85rem; line-height:1.55; }
+  .timeline-item.locked::before{ border-color: var(--red); }
+  .timeline-item.locked:hover::before{ background: var(--red); box-shadow: 0 0 10px var(--red), 0 0 18px var(--red); }
+  .timeline-item.locked .timeline-date{ color: var(--red); }
+  .timeline-item.locked h3, .timeline-item.locked p{ color: var(--red); }
+  @media (max-width:720px){
+    .timeline{ padding-left:22px; }
+    .timeline-item{ padding-left:18px; margin-bottom:22px; }
+    .timeline-item::before{ left:-22px; width:10px; height:10px; }
+    .timeline-item .timeline-date{ font-size:1.05rem; }
+  }
+
+  /* ---------- relationship graph ---------- */
+  .graph-toggle-btn{
+    display:inline-block; background: transparent; border:1px dashed var(--amber); color: var(--amber);
+    font-family:inherit; font-size:0.78rem; letter-spacing:0.5px; padding:8px 14px; cursor:pointer;
+    margin-bottom:18px; transition: all 0.2s;
+  }
+  .graph-toggle-btn:hover{ background: rgba(224,165,46,0.12); box-shadow: 0 0 6px var(--amber); }
+  .graph-wrap{
+    width:100%; max-width:820px; border:1px solid var(--green-dim); background: var(--bg-panel);
+    margin-bottom:14px; position:relative;
+  }
+  .graph-svg{ width:100%; height:auto; display:block; }
+  .edge-hit{ stroke: transparent; stroke-width:16; cursor:help; }
+  .graph-edge{ stroke: var(--green-dim); stroke-width:1.2; opacity:0.55; transition: opacity 0.15s, filter 0.15s; }
+  .graph-edge.rival{ stroke: var(--red); stroke-width:1.6; stroke-dasharray:6 4; opacity:0.75; }
+  .graph-edge.ally{ stroke: var(--green-bright); stroke-width:1.8; opacity:0.85; }
+  .graph-edge.tie{ stroke: var(--amber); stroke-width:1.4; stroke-dasharray:1 5; stroke-linecap:round; opacity:0.7; }
+  .graph-edge-group:hover .graph-edge{ opacity:1; }
+  .graph-edge-group.rival:hover .graph-edge{ filter: drop-shadow(0 0 5px var(--red)); }
+  .graph-edge-group.ally:hover .graph-edge{ filter: drop-shadow(0 0 5px var(--green-bright)); }
+  .graph-edge-group.tie:hover .graph-edge{ filter: drop-shadow(0 0 5px var(--amber)); }
+
+  .graph-info-panel{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:40%; max-width:230px; min-width:140px; box-sizing:border-box;
+    background: rgba(13,15,13,0.95); border:1px solid var(--green-dim);
+    color: var(--green-dim); font-family:'JetBrains Mono', monospace; font-size:10.5px; line-height:1.5;
+    letter-spacing:0.2px; padding:10px 12px; display:flex; align-items:center; justify-content:center;
+    text-align:center; pointer-events:none; opacity:0; transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .graph-info-panel.visible{ opacity:1; }
+  .graph-info-panel.rival{ border-color: var(--red); color: var(--red); text-shadow: 0 0 6px rgba(212,50,74,0.5); }
+  .graph-info-panel.ally{ border-color: var(--green-bright); color: var(--green-bright); text-shadow: 0 0 6px rgba(43,232,115,0.5); }
+  .graph-info-panel.tie{ border-color: var(--amber); color: var(--amber); text-shadow: 0 0 6px rgba(224,165,46,0.5); }
+  @media (max-width:720px){
+    .graph-info-panel{ font-size:8.5px; padding:7px 9px; width:46%; }
+  }
+  .graph-node circle{
+    fill: var(--bg); stroke: var(--green); stroke-width:2; cursor:pointer;
+    filter: drop-shadow(0 0 4px rgba(43,232,115,0.6)); transition: all 0.15s;
+  }
+  .graph-node:hover circle{ fill: rgba(43,232,115,0.15); stroke: var(--green-bright); filter: drop-shadow(0 0 10px var(--green)); }
+  .graph-node.syn circle{ stroke: var(--amber); filter: drop-shadow(0 0 4px rgba(224,165,46,0.6)); }
+  .graph-node.syn:hover circle{ fill: rgba(224,165,46,0.15); stroke: var(--amber); filter: drop-shadow(0 0 10px var(--amber)); }
+  .graph-node.char circle{ stroke: var(--green-bright); }
+  .graph-node.locked circle{ stroke: var(--red); filter: drop-shadow(0 0 6px rgba(212,50,74,0.7)); }
+  .graph-node.locked:hover circle{ fill: rgba(212,50,74,0.15); stroke: var(--red); }
+  .graph-node text{
+    fill: var(--green-dim); font-family:'JetBrains Mono', monospace; font-size:10px;
+    letter-spacing:0.2px; pointer-events:none; transition: fill 0.15s;
+  }
+  .graph-node:hover text{ fill: var(--green-bright); }
+  .graph-node.locked text{ fill: var(--red); }
+  .graph-legend{ font-size:0.75rem; color: var(--green-dim); letter-spacing:0.5px; margin-bottom:8px; }
+  .graph-legend .dot{
+    display:inline-block; width:9px; height:9px; border-radius:50%; margin:0 4px 0 12px; vertical-align:middle;
+  }
+  .graph-legend .dot.corp{ background: var(--green); box-shadow:0 0 4px var(--green); margin-left:0; }
+  .graph-legend .dot.syn{ background: var(--amber); box-shadow:0 0 4px var(--amber); }
+  .graph-legend .dot.locked{ background: var(--red); box-shadow:0 0 4px var(--red); }
+  .graph-legend-edges{ font-size:0.72rem; color: var(--green-dim); letter-spacing:0.3px; margin-bottom:22px; line-height:1.8; }
+  .graph-legend-edges .line{ display:inline-block; width:20px; height:0; border-top:2px solid; margin:0 4px 0 12px; vertical-align:middle; }
+  .graph-legend-edges .line.ally{ border-color: var(--green-bright); border-top-style:solid; }
+  .graph-legend-edges .line.rival{ border-color: var(--red); border-top-style:dashed; }
+  .graph-legend-edges .line.tie{ border-color: var(--amber); border-top-style:dotted; }
+  @media (max-width:720px){
+    .graph-node text{ font-size:8px; }
+  }
+
+  /* ---------- footer progress counter ---------- */
+  .progress-counter{ color: var(--amber); }
+
+  /* ---------- system messages (takeover the footer status bar) ---------- */
+  #footerBar{ position:relative; overflow:hidden; }
+  #footerBar .footer-alert{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background: var(--bg);
+    color: var(--red); font-family:'VT323', monospace; font-size:1.3rem; letter-spacing:4px;
+    text-shadow: 0 0 10px var(--red), 0 0 24px rgba(212,50,74,0.6);
+    opacity:0; transform: translateY(6px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    pointer-events:none;
+  }
+  #footerBar .footer-alert.show{ opacity:1; transform: translateY(0); }
+  #footerBar .footer-normal{ transition: opacity 0.3s ease; }
+  #footerBar.alerting .footer-normal{ opacity:0; }
+
+  @media (max-width: 720px){
+    #footerBar .footer-alert{ font-size:0.85rem; letter-spacing:2px; }
+  }
+
+  footer{
+    flex-shrink:0; border-top: 2px solid var(--green); padding: 10px 22px;
+    font-size:0.75rem; color: var(--green); display:flex; justify-content:space-between; letter-spacing:1px;
+    align-items:center;
+  }
+  footer::before{
+    content:""; width:9px; height:9px; border-radius:50%; background:var(--green);
+    display:inline-block; margin-right:8px; animation: pulse 2s infinite; flex-shrink:0;
+  }
+  #footer-left{ display:flex; align-items:center; }
+
+  .cmd-bar{
+    flex-shrink:0; border-top: 1px solid var(--green-dim); padding: 8px 22px;
+    display:flex; align-items:center; gap:8px; background: rgba(43,232,115,0.02);
+  }
+  .cmd-prompt{ color: var(--amber); font-size:0.85rem; letter-spacing:1px; flex-shrink:0; }
+  .cmd-input{
+    flex:1; background:transparent; border:none; outline:none;
+    color: var(--green-bright); font-family:inherit; font-size:0.85rem; letter-spacing:0.5px;
+  }
+  .cmd-input::placeholder{ color: var(--green-dim); }
+  @media (max-width: 720px){
+    .cmd-bar{ padding:7px 12px; }
+    .cmd-prompt{ font-size:0.7rem; }
+    .cmd-input{ font-size:16px; }
+    .search-box input{ font-size:16px; }
+  }
+  .sound-toggle{
+    background: transparent; border:1px solid var(--green-dim); color: var(--green);
+    font-family:inherit; font-size:0.72rem; letter-spacing:1px; padding:4px 10px;
+    cursor:pointer; transition: all 0.2s;
+  }
+  .sound-toggle:hover{ border-color:var(--green); box-shadow: var(--glow); }
+  .sound-toggle.on{ color: var(--amber); border-color: var(--amber); }
+  @media (max-width: 720px){
+    .sound-toggle{ font-size:0.62rem; padding:4px 8px; }
+  }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+  .cursor{ display:inline-block; width:8px; background:var(--green); animation: blink 1s step-end infinite; margin-left:2px;}
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  /* pre-boot: requires a real user gesture so sound + flash can be perfectly in sync */
+  #moonGlow{
+    position: fixed; top: calc(var(--bezel-gap) - 30px); right: calc(var(--bezel-gap) - 14px);
+    z-index: 105;
+    opacity: 0; pointer-events: none;
+    mix-blend-mode: screen;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.05; letter-spacing: 0;
+    white-space: pre;
+    color: var(--green-bright);
+    text-shadow: 0 0 8px rgba(150,255,180,0.85), 0 0 22px rgba(150,255,180,0.4);
+  }
+  #moonGlow.show{ opacity: 0.55; }
+  @media (max-width: 720px){
+    #moonGlow{ font-size: 8px; top: -14px; right: -6px; }
+  }
+
+  #preboot{
+    position:fixed; inset: var(--bezel-gap); z-index:200; background:#000; color:var(--green);
+    border-radius: var(--screen-radius); overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:'VT323', monospace; letter-spacing:2px; text-align:center; cursor:pointer;
+    text-shadow: var(--glow); gap:16px;
+  }
+  #preboot .preboot-title{ font-size:2.2rem; }
+  #preboot .preboot-hint{ font-size:1.05rem; color:var(--amber); animation: blinkHint 1.1s step-end infinite; }
+  @keyframes blinkHint{ 50%{ opacity:0.15; } }
+
+  /* boot screen */
+  #boot{
+    position:fixed; inset: var(--bezel-gap); z-index:100; background:var(--bg); color:var(--green);
+    border-radius: var(--screen-radius); overflow-y:auto; overflow-x:hidden;
+    padding: 40px; font-size: 1.15rem; line-height:1.7; font-family:'VT323', monospace;
+    letter-spacing:1px; display:none;
+  }
+  #boot .line{
+    opacity:0; animation: appear 0.05s forwards; text-shadow: var(--glow);
+    white-space:pre; max-width:100%; overflow-x:auto; scrollbar-width:none;
+  }
+  #boot .line::-webkit-scrollbar{ display:none; }
+
+  #skipBoot{
+    display:none; position:fixed; z-index:150;
+    left:50%; bottom: calc(var(--bezel-gap) + 18px); transform: translateX(-50%);
+    background:transparent; border:1px solid var(--green-dim); color:var(--green);
+    font-family:'VT323', monospace; font-size:1rem; letter-spacing:2px;
+    padding:6px 18px; cursor:pointer; text-shadow: var(--glow);
+  }
+  #skipBoot:hover{ border-color:var(--amber); color:var(--amber); box-shadow:0 0 6px var(--amber); }
+  #boot .ascii-logo{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55em; line-height: 1.15; letter-spacing: 0;
+    color: var(--green-bright);
+  }
+  #boot .dir-listing{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.05em; line-height: 1.35; letter-spacing: 0;
+    color: var(--green-bright);
+  }
+  @keyframes appear{ to{ opacity:1; } }
+
+  /* bright flash overlay that actually simulates a CRT unblanking, independent of dark bg */
+  #crtFlash{
+    position:fixed; inset: var(--bezel-gap); z-index:210; pointer-events:none;
+    border-radius: var(--screen-radius); overflow:hidden;
+    background: #d8ffe6;
+    clip-path: inset(49.6% 0 49.6% 0);
+    opacity:0;
+  }
+  #crtFlash.play{
+    animation: crtPowerOn 0.7s cubic-bezier(0.3,0.9,0.3,1) forwards;
+  }
+  @keyframes crtPowerOn{
+    0%{ clip-path: inset(49.6% 0 49.6% 0); opacity:1; }
+    8%{ clip-path: inset(49.6% 0 49.6% 0); opacity:1; }
+    22%{ clip-path: inset(0 0 0 0); opacity:1; }
+    38%{ clip-path: inset(0 0 0 0); opacity:0.55; }
+    50%{ opacity:0.85; }
+    62%{ opacity:0.3; }
+    100%{ opacity:0; clip-path: inset(0 0 0 0); }
+  }
+
+  .app-poweron{ animation: appFadeIn 0.3s ease-out both; }
+  @keyframes appFadeIn{ from{ opacity:0; } to{ opacity:1; } }
+
+  main::-webkit-scrollbar, nav::-webkit-scrollbar{ width:10px; }
+  main::-webkit-scrollbar-track, nav::-webkit-scrollbar-track{ background: var(--bg); }
+  main::-webkit-scrollbar-thumb, nav::-webkit-scrollbar-thumb{ background: var(--green); border:2px solid var(--bg); }
+  main::-webkit-scrollbar-thumb:hover, nav::-webkit-scrollbar-thumb:hover{ background: var(--amber); }
+
+  /* ---------- mobile nav toggle (hidden on desktop) ---------- */
+  #navToggle{
+    display:none;
+    background:none; border:2px solid var(--green); color:var(--green);
+    font-family:inherit; font-size:1rem; padding:6px 12px; cursor:pointer; letter-spacing:2px;
+    flex-shrink:0; transition: all 0.2s;
+  }
+  #navToggle:hover{ background:var(--green); color:var(--bg); box-shadow: var(--glow); }
+  .nav-backdrop{
+    display:none;
+    position:fixed; inset:0; z-index:60;
+    background: rgba(0,0,0,0.65);
+  }
+
+  /* ---------- INTERCEPT: взлом чужих корпоративных сетей ---------- */
+  #interceptOverlay{
+    display:none; position:fixed; inset: var(--bezel-gap); z-index:80;
+    border-radius: var(--screen-radius); overflow-y:auto;
+    background: rgba(4,6,5,0.98); color:var(--green);
+    font-family:'JetBrains Mono', monospace; text-shadow: var(--glow);
+    padding: 20px 24px;
+  }
+  #interceptOverlay.show{ display:block; }
+  .icpt-top{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:2px solid var(--green); padding-bottom:10px; margin-bottom:16px;
+  }
+  .icpt-title{ color:var(--amber); font-size:0.85rem; letter-spacing:1px; }
+  .icpt-close{
+    background:transparent; border:1px solid var(--green-dim); color:var(--green);
+    font-family:inherit; font-size:0.72rem; letter-spacing:1px; padding:4px 10px; cursor:pointer;
+  }
+  .icpt-close:hover{ border-color:var(--red); color:var(--red); box-shadow:0 0 6px var(--red); }
+  .icpt-timer{
+    font-family:'VT323', monospace; font-size:1.5rem; color:var(--green-bright);
+  }
+  .icpt-timer.low{ color:var(--red); animation: pulse 0.6s infinite; }
+
+  .icpt-node-row{
+    border:1px solid var(--green); border-left:3px solid var(--green); background:var(--bg-panel);
+    padding:12px 16px; margin-bottom:12px; cursor:pointer; transition: all 0.2s;
+  }
+  .icpt-node-row:hover{ background: rgba(43,232,115,0.07); box-shadow: var(--glow); transform: translateX(3px); }
+  .icpt-node-row h3{ margin:0 0 6px 0; color:var(--green-bright); font-size:1rem; }
+  .icpt-node-row .ice{ color:var(--amber); font-size:0.72rem; letter-spacing:1px; }
+  .icpt-node-row p{ margin:6px 0 0 0; color:var(--green-dim); font-size:0.82rem; line-height:1.45; }
+
+  .icpt-body{ display:flex; gap:28px; flex-wrap:wrap; }
+  .icpt-label{ font-size:0.7rem; color:var(--green-dim); letter-spacing:1px; margin-bottom:8px; }
+  .icpt-grid{ display:grid; grid-template-columns:repeat(var(--gsize),38px); gap:6px; }
+  .icpt-cell{
+    width:38px; height:34px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); color:var(--green-dim); font-size:0.85rem; user-select:none;
+  }
+  .icpt-cell.avail{ color:var(--green-bright); border-color:var(--green-dim); cursor:pointer; }
+  .icpt-cell.avail:hover{ background: rgba(43,232,115,0.12); box-shadow: var(--glow); }
+  .icpt-cell.used{ color:var(--amber); border-color:var(--amber); background: rgba(224,165,46,0.08); }
+  .icpt-side{ min-width:190px; }
+  .icpt-seq{ margin-bottom:14px; }
+  .icpt-seq-vals span{
+    display:inline-block; border:1px solid var(--line); padding:2px 6px; margin:0 4px 4px 0;
+    font-size:0.8rem; color:var(--green-dim);
+  }
+  .icpt-seq-vals span.done{ color:var(--amber); border-color:var(--amber); }
+  .icpt-seq-reward{ font-size:0.68rem; color:var(--green-dim); }
+  .icpt-buf{ display:flex; gap:5px; margin-top:4px; }
+  .icpt-buf-slot{
+    width:34px; height:28px; border:1px solid var(--line); display:flex; align-items:center;
+    justify-content:center; font-size:0.78rem; color:var(--green-dim);
+  }
+  .icpt-buf-slot.filled{ color:var(--green-bright); border-color:var(--green-bright); }
+  .icpt-hint{ margin-top:16px; font-size:0.72rem; color:var(--green-dim); }
+  .icpt-hint b{ color:var(--amber); }
+  .icpt-result-line{ margin:2px 0; font-size:0.88rem; line-height:1.6; }
+  .icpt-result-line.ok{ color:var(--green-bright); }
+  .icpt-result-line.miss{ color:var(--green-dim); }
+  .icpt-result-line.fail{ color:var(--red); }
+  @media (max-width:640px){
+    .icpt-cell{ width:30px; height:28px; font-size:0.72rem; }
+    .icpt-body{ gap:16px; }
+    .icpt-grid{ grid-template-columns:repeat(var(--gsize),30px); }
+  }
+
+  /* ---------- mobile layout ---------- */
+  @media (max-width: 720px){
+    :root{ font-size: 15px; --bezel-gap: 10px; --screen-radius: 22px; }
+
+    header{ padding: 10px 12px; align-items:center; }
+    header .brand{ font-size:1.2rem; letter-spacing:1px; }
+    header .brand small{ font-size:0.58rem; letter-spacing:0.2px; margin-top:4px; }
+    header .stamp{ display:none; }
+    #navToggle{ display:inline-block; order:-1; margin-right:10px; }
+
+    .body-grid{ position:relative; }
+
+    nav{
+      position:fixed; top:var(--bezel-gap); left:var(--bezel-gap); bottom:var(--bezel-gap); z-index:61;
+      width: 78vw; max-width: 300px;
+      background: var(--bg);
+      border-right: 1px solid var(--green);
+      border-radius: var(--screen-radius) 0 0 var(--screen-radius);
+      transform: translateX(-100%);
+      transition: transform 0.2s ease-out;
+      padding-top: 54px;
+    }
+    nav.open{ transform: translateX(0); }
+    .nav-backdrop.open{ display:block; }
+
+    main{ padding: 16px 14px 56px 14px; }
+
+    .list-title{ font-size:1.5rem; }
+    .entry-grid{ grid-template-columns: 1fr; gap:10px; }
+    .entry-card{ padding:12px; }
+    .entry-card h3{ font-size:0.95rem; }
+
+    .article h2{ font-size:1.7rem; }
+    .article .body-text{ font-size:0.9rem; line-height:1.65; }
+    .article .link-btn{ padding:7px 10px; }
+
+    footer{ font-size:0.62rem; padding:6px 12px; flex-wrap:wrap; gap:4px; }
+
+    #boot{ padding: 16px; font-size:0.68rem; }
+    #boot .ascii-logo{ font-size:0.4em; }
+    #boot .dir-listing{ font-size:0.5em; }
+    #preboot .preboot-title{ font-size:1.5rem; padding:0 20px; }
+    #preboot .preboot-hint{ font-size:0.85rem; }
+  }
+
+  /* extra-narrow phones (SE, older/smaller Android): footer wraps ugly at 720px rules, stack it cleanly */
+  @media (max-width: 380px){
+    footer{ flex-direction:column; align-items:flex-start; gap:5px; padding:8px 12px; }
+    footer .footer-normal{ flex-direction:column !important; align-items:flex-start !important; gap:5px; }
+  }
+
+  @media (max-width: 720px) and (hover:none){
+    .entry-card:active{ border-color: var(--green-dim); background: rgba(0,255,65,0.08); }
+    .cat:active{ background: rgba(0,255,65,0.1); }
+
+    .crt-overlay{ background:none; }
+    .crt-flicker{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="monitor-bezel"></div>
+
+<div id="moonGlow">
+            ▒▒▒▒░
+       ▒▒▒▒▒▒▒▒▒▒▒▒░░░
+     ▒▒▒▒▒▓▓▓▓▓▒▒▒▒▒▒░░░
+    ▒▒▒▒▓▓▓▓▓▓▓▓▓▒▒▒▒░░░░
+   ▒▒▒▒▓▓▓▓▓██▓▓▓▓▒▒▒▒░░░░
+  ▒▒▒▒▓▓▓▓▓████▓▓▓▒▒▒░░░░░
+  ▒▒▒▒▒▓▓▓▓▓██▓▓▒▒▒▒░░░░░
+  ░▒▒▒▒▒▒▓▓▓▓▓▒▒▒▒▒░░░░░
+   ░░▒▒▒▒▒▒▒▒▒▒▒░░░░░░░
+    ░░░░░▒▒▒░░░░░░░░░
+     ░░░░░░░░░░░░░
+         ░░░</div>
+
+<div id="preboot">
+  <div class="preboot-title">NADIR // ARCHIVE TERMINAL</div>
+  <div class="preboot-hint">[ НАЖМИТЕ, ЧТОБЫ ВОЙТИ ]</div>
+</div>
+<div id="crtFlash"></div>
+<div id="boot"></div>
+<button id="skipBoot" type="button">ПРОПУСТИТЬ &gt;&gt;</button>
+
+<div class="crt-overlay"></div>
+<div class="crt-vignette"></div>
+<div class="crt-flicker"></div>
+<div class="crt-glass"></div>
+<div class="crt-rim"></div>
+
+<div class="wrap" id="app" style="display:none;">
+  <header>
+    <button id="navToggle" aria-label="Меню">☰</button>
+    <div class="brand">NADIR // ARCHIVE TERMINAL<small>ДОСТУП: СОТРУДНИК NADIR INDUSTRIES · УРОВЕНЬ 1</small></div>
+    <div class="stamp">RECORDS ACCESSIBLE</div>
+  </header>
+
+  <div class="body-grid">
+    <div class="nav-backdrop" id="navBackdrop"></div>
+    <nav id="nav"></nav>
+    <main id="main"></main>
+  </div>
+
+  <div id="cmdBar" class="cmd-bar">
+    <span class="cmd-prompt">C:\NADIR&gt;</span>
+    <input id="cmdInput" class="cmd-input" placeholder="введите команду (help)" autocomplete="off" spellcheck="false">
+  </div>
+
+  <footer id="footerBar">
+    <span class="footer-normal" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+      <span id="footer-left">SODOM CIVIC ARCHIVE MIRROR <span id="progressCounter" class="progress-counter">· ИЗУЧЕНО: 0/0</span></span>
+      <button id="soundToggle" class="sound-toggle">♪ САУНДТРЕК: OFF</button>
+      <span>СИСТЕМА ОНЛАЙН</span>
+    </span>
+    <div id="footerAlert" class="footer-alert"></div>
+  </footer>
+</div>
+
+<div id="interceptOverlay">
+  <div class="icpt-top">
+    <span class="icpt-title">МОДУЛЬ ПЕРЕХВАТА // INTERCEPT</span>
+    <span id="icptTimer" class="icpt-timer"></span>
+    <button class="icpt-close" onclick="closeIntercept()">✕ ЗАКРЫТЬ (ESC)</button>
+  </div>
+  <div id="icptBody"></div>
+</div>
+
+<script>
+/* ==========================================================================
+   ДАННЫЕ ЛОРА
+   Чтобы добавить запись — скопируй объект в нужном массиве и заполни поля.
+   id должен быть уникальным в пределах всего файла (используется для ссылок).
+   links — массив id других записей (для кнопок "связанные записи").
+   ========================================================================== */
+
+const DATA = {
+
+  chronology: [
+    {
+      id: "chron-crucifixion",
+      tag: "I ВЕК Н.Э.",
+      title: "Смерть на кресте",
+      preview: "«От шестого же часа тьма была по всей земле до часа девятого» (Мф. 27:45)",
+      body: [
+        "Согласно преданиям, распятие Христа стало точкой, после которой в мире начали происходить необъяснимые вещи. Небо потемнело, на землю обрушился кровавый ливень, земная твердь расстрескалась под ногами.",
+        "С этого момента истории сохранились упоминания об аномалиях: странных явлениях и существах, не укладывающихся в привычную картину мира."
+      ],
+      links: ["chron-ww1"]
+    },
+    {
+      id: "chron-ww1",
+      tag: "1914–1918",
+      title: "Первая мировая война",
+      preview: "«Восстанет народ на народ, и царство на царство» (Мф. 24:7)",
+      body: [
+        "В начале XX века человечество столкнулось с закономерным исходом своих амбиций и алчности — Великой Войной. Миллионы людей шли на фронт за свои страны, мечтая о подвигах и славе, думая об этом как о приключении. Реальность оказалась куда хуже, чем это вообще можно было себе вообразить. Обезображенные тела, скошенные пулемётами и раздавленные гусеницами танков — люди ещё никогда не видели такой страшной войны, а вместе с ней и сущностей, которых она принесла с собой.",
+        "Закончилась она в 1918 году подписанием Версальского договора, где униженная Германия выставлялась главным агрессором и была вынуждена выплачивать огромные контрибуции победителям. Мир затаил дыхание на два десятилетия: ветераны, вернувшиеся с войны, оказались никому не нужны, начались беспорядки и волнения, мир постепенно сходил с ума, медленно но верно приближаясь к пучине безумия и страданий. Это было только начало.",
+        "Тогда на сцену вышла новая корпорация, тайно предлагавшая работу всем участникам Великой Войны — Primordial Solutions."
+      ],
+      links: ["chron-crucifixion", "loc-sodom", "frac-primordial", "chron-massacre"]
+    },
+    {
+      id: "chron-massacre",
+      tag: "1939–1947",
+      title: "Великая Бойня",
+      preview: "«И вышел другой конь, рыжий; и сидящему на нём дано было взять мир с земли, чтобы убивали друг друга» (Откр. 6:4)",
+      body: [
+        "Уязвлённая гордость не позволила забыть унижения даже перед лицом угрозы, превосходящей любую человеческую грызню. Одна из проигравших стран решила использовать Аномалии в своих целях, чтобы вновь развязать мировую войну.",
+        "К 1939 году тишина, установившаяся после первой войны, окончательно рухнула. Пока ветераны прятали в подвалах свои искалеченные души, мировые лидеры готовились к худшему, мобилизируя свои ресурсы, жадно скупая услуги Primordial Solutions. Корпорации было всё равно, кто победит и кто проиграет. Они продавали аномалий всем сторонам одновременно, главным был спрос, а спрос был бесконечным.",
+        "Германия, задыхавшаяся от жажды реванша, первой сделала ход. За ней потянулись остальные. Аномалии выпускали на поля сражений как живое оружие, целые дивизии исчезали за одну ночь, не оставляя после себя ничего, кроме выжженной земли и разрушенных судеб."
+      ],
+      motto: "«Бог дал нам свободу, чтобы мы созидали. Мы использовали её, чтобы превратить Его лучший инструмент в самую эффективную гильотину в истории.»",
+      links: ["chron-ww1", "chron-miracle", "frac-primordial"]
+    },
+    {
+      id: "chron-miracle",
+      tag: "1947",
+      title: "Вознесение",
+      preview: "«Он поднялся в глазах их, и облако взяло Его из вида их» (Деян. 1:9)",
+      body: [
+        "В 1947 году, под самый конец Великой Бойни, произошло событие, именуемое «Вознесением». В один день всё, что находилось за пределами Содома, просто исчезло. Многотысячные армии, целые города — всё это затихло и больше не выходило на связь, будто бы их и вовсе никогда не существовало. Уцелели лишь те, кто находился в Содоме либо его окрестностях.",
+        "Тогда же весь мир был объявлен уничтоженным, а выжившие в стенах города остались единственными представителями человечества. Мир был обречён, а куда делись те миллиарды людей — никто не знает до сих пор."
+      ],
+      links: ["chron-massacre", "loc-sodom", "chron-corpwar"]
+    },
+    {
+      id: "chron-corpwar",
+      tag: "1953",
+      title: "Корпоративная война",
+      preview: "«И если дом разделится сам в себе, не может устоять дом тот» (Мк. 3:25)",
+      body: [
+        "За стенами Содома выжившие постепенно перестали думать только о выживании. Страх сменился более привычным человеку чувством — жаждой влияния. Каждая корпорация хотела не кусок пирога, а весь пирог целиком. В итоге не наелся никто — застряло в горле у всех.",
+        "Первым ходом стал Acheron Grid: тариф на электричество взлетел, а альтернативы у корпораций не было — платить пришлось всем. Так началась холодная фаза войны: шантаж, саботаж, наёмные убийства. Стороны методично подтачивали друг друга изнутри, готовя решающий удар.",
+        "Развязка наступила, когда Acheron перекрыл электричество на одном из заводов Smiths Heavy Industries. Мистер Смит оказался не из тех, кто утирается и молчит. Он собрал горстку людей, раздал оружие — сколько руки могли унести — и отправил их против Acheron Grid напрямую. Началась горячая фаза: открытая бойня, которая быстро перестала быть делом двух сторон. Случайные пули убивали сотрудников других корпораций, а иногда пули были совсем не случайными — под шумок сводились старые счёты. Верхние уровни залила кровь людей, которые к спору вообще не имели отношения.",
+        "Продолжалось это, пока стороны не осознали очевидное: без одной корпорации не выживет другая. Круговая порука оказалась крепче амбиций. Сотни жизней спустя стороны сели за стол переговоров и поделили Содом на сферы влияния.",
+      ],
+      links: ["chron-miracle", "frac-acheron", "frac-smiths", "chron-riot"]
+    },
+    {
+      id: "chron-riot",
+      tag: "1954",
+      title: "Бунт с низов",
+      preview: "«Плата, удержанная вами у работников... вопиет; и вопли жнецов дошли до слуха Господа Саваофа» (Иак. 5:4)",
+      body: [
+        "Простой люд не мог долго терпеть издевательства и пренебрежение — и вот снова война, всего через 9 лет после того как Великая Бойня чуть не уничтожила весь род людской.",
+        "Сначала это были мирные протесты и митинги: люди с нижних уровней пытались донести, что они такие же, как и те, что сверху, тоже из плоти и крови, и что всем им нужно объединиться ради будущего против общей угрозы. И всё было бы хорошо, если бы эти митинги не парализовывали производство — множество рабочих шло на них, активнее всех агитируя выступать против неравенства.",
+        "Корпорации не стали церемониться и жестоко подавляли выступления, заставляя людей возвращаться на рабочие места. Самых активных казнили на площадях в назидание остальным — никто не мог перечить истинной власти города. По легенде, одним из казнённых был муж будущей главы преступного синдиката «44 Block». Она смотрела, как убивают то единственное, ради чего она жила, — и поняла, что терять ей больше нечего. Несколько месяцев шла подготовка: агитация, сбор вооружения, продумывание плана. По задумке несколько групп должны были одновременно заложить взрывные устройства под небоскрёбами корпораций, чтобы обрушить их.",
+        "В назначенный день случилось непредвиденное: в город пробралась аномалия, небоскрёбы тут же начали опускаться под землю — времени оставалось очень мало. Лидер сопротивления ценой собственной жизни прыгнула под опускающие механизмы, чтобы подорвать их. Заряда не хватило, чтобы полностью обрушить здание в нижний уровень, но взрыв задел несколько этажей, где погибли работники.",
+        "Небоскрёб принадлежал Lazarus Medica — в нём располагалась их дочерняя компания по помощи нуждающимся. Такого предательства они простить не могли: свершилось немыслимое, и Lazarus Medica заключила соглашение с Nachtwächter, снабжая их ресурсами, чтобы те устроили массовую карательную операцию на нижних уровнях. Вновь случилась бойня, которая показала тамошним жителям, что их жизни ничего не стоят.",
+        "После операции озлобленные жители начали объединяться в преступные синдикаты — так, например, «44 Block» использует свою покойную основательницу как мученицу, которая повела всех против корпоративного гнёта. Но есть и такие, кто просто хочет зарабатывать, творя хаос — обычно это ветераны Великой Бойни, сошедшие с ума от нехватки адреналина и пережитого опыта."
+      ],
+      links: ["chron-corpwar", "frac-lazarus", "frac-nacht", "frac-44block", "chron-judgment"]
+    },
+    {
+      id: "chron-judgment",
+      tag: "1960-е",
+      title: "Чудо",
+      preview: "«Первый Ангел вострубил, и сделались град и огонь, смешанные с кровью, и пали на землю» (Откр. 8:7)",
+      body: [
+        "Этот день окрестили самым худшим за всю историю Содома. Обычным белым днём небеса разверзлись, в городе завыла сирена — началась стандартная процедура эвакуации. Люди не сильно спешили, привыкшие к такому раскладу жизни и постоянной угрозе. Но этот день отличался: зазвонили колокола, затрубили трубы, предвещая приход чего-то высшего, за гранью этого мира.",
+        "Выжившие очевидцы говорили о размашистых крыльях, столь прекрасных и ужасных одновременно — те, кто их видел, застывали на месте, не в силах пошевелиться. По их словам, существо пыталось пробраться на нижний уровень Содома. Все, кто пытался ему помешать, оказывались буквально испепелены — от них оставался лишь прах и въевшаяся тень в архитектуре проклятого города.",
+        "А дальше всё затихло. Сирены прекратили выть, будто ничего и не произошло. Район проникновения аномалии тут же оцепил Ахерон, а с того момента безопасность в городе усилили, поставив пушки на многие небоскрёбы."
+      ],
+      links: ["chron-riot", "loc-sodom", "frac-acheron"]
+    }
+  ],
+
+  factions: [
+    {
+      id: "frac-primordial",
+      tag: "КОРПОРАЦИЯ",
+      status: "defunct",
+      title: "Primordial Solutions",
+      preview: "Основательница всех корпораций. Более не существует.",
+      image: "assets/primordial.png",
+      body: [
+        "Основательница всех Корпораций, появившаяся после Первой Мировой войны. Никто не знал, кто был её руководителем и откуда она вообще появилась. Предположительно, после Первой мировой войны неизвестная группа людей завладела технологией, позволяющей контролировать аномалии, и впоследствии растянула свои сети по всей планете, поставляя аномалии любым странам за очень большую плату."
+      ],
+      motto: "«Отриньте страх, примите будущее.»",
+      links: ["chron-ww1", "chron-massacre"]
+    },
+    {
+      id: "frac-acheron",
+      tag: "КОРПОРАЦИЯ",
+      title: "Acheron Grid",
+      preview: "Монополисты тепла и света.",
+      image: "assets/acheron.png",
+      body: [
+        "Монополисты тепла и света. Они владеют всеми электростанциями города, и без их турбин Содом погрузится во тьму ровно за один час."
+      ],
+      motto: "«Без нас будет только тьма.»",
+      links: ["chron-corpwar", "chron-judgment"]
+    },
+    {
+      id: "frac-smiths",
+      tag: "КОРПОРАЦИЯ",
+      title: "Smiths Heavy Industries",
+      preview: "Оружейный гигант, выкованный на обломках заводов Великой Бойни.",
+      image: "assets/smiths.png",
+      art: "assets/smiths-art.jpg",
+      body: [
+        "Оружейный гигант, выкованный мистером Смитом на обломках разрушенных заводов времён Великой Бойни. Они куют тяжёлую броню, собирают артиллерию и штампуют боеприпасы для всего Содома. Их продукция уродлива, брутальна и безотказна."
+      ],
+      motto: "«Бог создал людей сильными и слабыми, мистер Смит их уровнял.»",
+      links: ["chron-massacre"]
+    },
+    {
+      id: "frac-klein",
+      tag: "КОРПОРАЦИЯ",
+      title: "Klein Logistics",
+      preview: "Транспортная артерия мегаполиса.",
+      image: "assets/klein.png",
+      body: [
+        "Транспортная артерия мегаполиса. Основатель компании выживал под артиллерийскими обстрелами, снабжая осаждённые города во время войны, по слухам он несколько раз бывал в Ленинграде. Теперь они предоставляют услуги бронированной логистики."
+      ],
+      motto: "«Тяжёлая работа на нас.»",
+      links: ["chron-massacre"]
+    },
+    {
+      id: "frac-lazarus",
+      tag: "КОРПОРАЦИЯ",
+      title: "Lazarus Medica",
+      preview: "Осколок бывшего «Красного Креста».",
+      image: "assets/lazarus.png",
+      body: [
+        "Осколок бывшего «Красного Креста», монополизировавший остатки здравоохранения. Из-за тотального дефицита медикаментов они обладают абсолютной властью над жизнями граждан."
+      ],
+      motto: "«Не навреди.»",
+      links: []
+    },
+    {
+      id: "frac-nacht",
+      tag: "КОРПОРАЦИЯ",
+      title: "Nachtwächter",
+      preview: "Элитные эскадроны смерти.",
+      image: "assets/nachtwachter.png",
+      art: "assets/nachtwachter-art.jpg",
+      body: [
+        "Элитные эскадроны смерти. Изгои, состоящие из германских ветеранов восточного фронта (и обычных немцев с изолированного района Содома). Они предлагают услуги зачистки секторов и охраны. В умах их руководства до сих пор жива нацистская идеология, помноженная на механическую, безжалостную эффективность."
+      ],
+      motto: "«Gott segne Deutschland.»",
+      links: []
+    },
+    {
+      id: "frac-nadir",
+      tag: "КОРПОРАЦИЯ",
+      title: "Nadir Industries",
+      preview: "В эту корпорацию попадают самые отпетые преступники.",
+      image: "assets/nadir.png",
+      body: [
+        "В эту корпорацию попадают самые отпетые преступники, чьи смертные приговоры или пожизненные заключения были заменены на отработку у этой корпорации. Работников тщательно отбирают и проверяют, после чего подвергают процедуре копирования сознания, даря им тем самым квантовое бессмертие с возможностью в любой момент переместить их сознание в новое тело. Вместе с этим никуда не девается боль от смерти и последующие от этого кошмары.",
+        "Надир являются разнорабочими в мире корпораций, они выполняют всю самую грязную работу по заказам, об этой деятельности знают только единицы. Для всех остальных Надир — это борцы с аномалиями, не использующие никаких законченных."
+      ],
+      motto: "«Смерть — это не конец.»",
+      links: []
+    },
+    {
+      id: "frac-jiuding",
+      tag: "КОРПОРАЦИЯ",
+      title: "Jiuding",
+      preview: "Китайская корпорация, превратившая жизни людей в товар.",
+      image: "assets/Jiuding.png",
+      body: [
+        "Китайская корпорация, выросшая на людях как товаре. Jiuding не нанимает работников напрямую, а формирует пулы гражданского персонала — грузчиков, охрану, разнорабочих, переводчиков и специалистов узкого профиля — и сдаёт их в аренду другим корпорациям и синдикатам по контракту. Поэтому в Содоме нет ни одной крупной структуры, у которой хотя бы часть смены не числилась бы через Jiuding.",
+        "Контракт у них жёсткий: человек подписывает не срок, а квоту выработки, и пока квота не закрыта, его можно перепродавать хоть трижды за месяц другому нанимателю без его согласия.",
+        "С Ironvale Construction Jiuding связаны теснее всего, так как тоннельные работы жрут людей быстрее, чем успевает готовить любая биржа труда."
+      ],
+      motto: "«新时代的十亿双手»",
+      links: ["frac-ironvale"]
+    },
+    {
+      id: "frac-ironvale",
+      tag: "КОРПОРАЦИЯ",
+      title: "Ironvale Construction",
+      preview: "Строительно-горнодобывающий гигант, который расширяет Содом вниз.",
+      image: "assets/ironvale.png",
+      art: "assets/ironvale-art.jpg",
+      body: [
+        "Строительно-горнодобывающая корпорация, занятая бурением и расширением тоннельной сети под Содомом и прокладыванием новых уровней коммуникаций, укрытий и грузовых артерий в толще породы, на которой стоит город.",
+        "Работа идёт постоянно, потому что город растёт вниз быстрее, чем успевает расти вверх. Смертность среди проходчиков считается нормой ведения бизнеса, а не чрезвычайным происшествием: обвалы, отравления воздуха и вещи, которые иногда выходят из свежепробитого туннеля навстречу бригаде, списываются в один и тот же отчёт под графой «производственные потери»."
+      ],
+      motto: "«Во тьму!»",
+      links: ["frac-jiuding"]
+    },
+    {
+      id: "frac-demeter",
+      tag: "КОРПОРАЦИЯ",
+      title: "Demeter Holdings",
+      preview: "Пищевой гигант, на котором держится снабжение всего Содома.",
+      image: "assets/Demeter.png",
+      body: [
+        "Пищевой гигант, на котором держится весь город, потому что снаружи Содома почти нет ничего, что можно было бы вырастить или собрать.",
+        "Demeter управляет закрытым циклом производства: многоярусными фермами под искусственным светом, цехами синтеза белка, теплицами, куда не попадает ни капли внешнего воздуха, и распределительной сетью, которая решает, кто на верхнем уровне ест свежее, а кто на нижнем получает паёк с истёкшим сроком по сниженной цене."
+      ],
+      motto: "«Кормим будущее»",
+      links: []
+    },
+    {
+      id: "frac-broadwave",
+      tag: "КОРПОРАЦИЯ",
+      title: "Broadwave",
+      preview: "Журналистская корпорация, раскрывающая грязные секреты корпораций.",
+      image: "assets/broadwave.png",
+      body: [
+        "Журналистская корпорация, единственная в Содоме, которая зарабатывает на информации о том, что происходит в городе, и именно поэтому остальные корпорации её на дух не переносят.",
+        "Broadwave держит сеть корреспондентов на обоих уровнях, выпускает сводки, расследования и колонки, до которых у самих корпораций руки не доходят, а желания разбираться с последствиями и подавно нет. Любая утечка, авария или скандал, оставленный без внимания у себя дома, рано или поздно всплывает в эфире Broadwave с именами и цифрами.",
+        "Формальной цензуры на них нет, потому что ни у одной корпорации не хватает влияния продавить полный запрет в одиночку, а объединяться против конкурента ради общего интереса корпорации Содома исторически не умеют, поэтому Broadwave продолжает работать."
+      ],
+      motto: "«Факты священны, а мнения свободны»",
+      links: []
+    },
+    {
+      id: "frac-44block",
+      tag: "ПРЕСТУПНЫЙ СИНДИКАТ",
+      title: "44 Block",
+      preview: "Отбросы и отщепенцы, сплотившиеся вместе.",
+      body: [
+        "Синдикат родился из крови «Бунта с низов»: основательница, чей муж был казнён за участие в протестах, погибла, пытаясь остановить опускающиеся под землю небоскрёбы, чтобы спасти нижний уровень от карательной операции. Для тех, кто выжил, она стала не просто погибшей соратницей, а мученицей, чьё имя используют, чтобы держать людей вместе."
+      ],
+      motto: "«Встань, страх преодолей.»",
+      links: ["chron-riot", "frac-lazarus", "frac-nacht"]
+    },
+    {
+      id: "frac-civil-war",
+      tag: "ПРЕСТУПНЫЙ СИНДИКАТ",
+      title: "Civil War",
+      preview: "Ветераны Великой Бойни.",
+      image: "assets/civilwar.png",
+      art: "assets/civilwar-art.jpg",
+      body: [
+        "Синдикат из ветеранов Великой Бойни, которые давно не воюют за идею, потому что идей у них не осталось ни одной, зато осталась потребность снова почувствовать себя нужными и получить дозу адреналина, которую мирная жизнь дать не в состоянии.",
+        "Civil War берётся за любую работу, где можно подраться: зачистки, силовое сопровождение, выбивание долгов, охрана караванов через опасные секторы, и работают одинаково охотно что на корпорацию, что на синдикат с нижнего уровня, лишь бы платили и дали пострелять.",
+        "Внутри у них сохранился военный костяк, звания и субординация из старых частей, и человек, который у Civil War получает приказы, чаще всего когда-то получал их на настоящем фронте. Поэтому дисциплина у синдиката выше, чем у большинства криминальных структур Содома, а вот моральных ограничений в разы меньше."
+      ],
+      motto: "«Апокалипсис сегодня.»",
+      links: ["frac-ironvale"]
+    },
+    {
+      id: "frac-sovereign",
+      tag: "ПРЕСТУПНЫЙ СИНДИКАТ",
+      title: "Sovereign",
+      preview: "Гражданское сопротивление корпоративной власти и идея возвращения государств.",
+      image: "assets/Sovereign.png",
+      art: "assets/sovereign-art.jpg",
+      body: [
+        "Синдикат гражданского сопротивления, построенный на идее, что власть корпораций над человеком противоестественна и что единственный выход из положения, где твоя жизнь принадлежит держателю контракта, — возвращение государств.",
+        "Sovereign агитирует, вербует, устраивает саботаж на объектах корпораций и распространяет по обоим уровням листовки с призывом вспомнить, что человек когда-то был гражданином страны, а не активом баланса.",
+        "Большая часть населения Содома государств никогда не видела и представляет их себе исключительно по рассказам стариков и обрывкам довоенных архивов. Поэтому у Sovereign репутация синдиката романтиков, а не реальной силы. Однако их сеть информаторов и явок разрослась достаточно, чтобы корпорации относились к ним всерьёз и время от времени зачищали очередную ячейку, которая тут же появляется в другом районе под новым прикрытием."
+      ],
+      motto: "«Граждане всех стран, соединяйтесь!»",
+      links: ["frac-jiuding", "frac-broadwave"]
+    },
+    {
+      id: "frac-judgments-eve",
+      tag: "ПРЕСТУПНЫЙ СИНДИКАТ",
+      title: "Judgment's Eve",
+      preview: "Культ, ожидающий второе пришествие ангела и начало апокалипсиса.",
+      image: "assets/Judgment_s_Eve.png",
+      body: [
+        "Культ, ожидающий второе пришествие ангела и начало апокалипсиса, который его последователи считают не концом света, а его исправлением: миром, где хаос сотрёт корпоративный порядок вместе со всеми, кто его держит.",
+        "Judgment's Eve вербует в первую очередь тех, кому нечего терять и некуда идти, обещая им место рядом с ангелом в новом мире, и каждую аномалию, каждый выброс, каждую катастрофу в городе они трактуют как знамение приближающегося часа.",
+        "Опасность культа не в организованности, а в непредсказуемости: у них нет единого руководства и чёткой иерархии, зато есть готовность ускорить пришествие своими руками, если знамений покажется недостаточно."
+      ],
+      motto: "«Бог в его небесах, вместе с миром.»",
+      links: ["chron-judgment", "frac-sovereign"]
+    }
+
+  ],
+
+  locations: [
+    {
+      id: "loc-sodom",
+      tag: "ГОРОД",
+      title: "Содом",
+      preview: "Огромный город на два вертикальных уровня.",
+      body: [
+        "Содом строился в начале 30-х годов как город будущего, где все были бы жителями без вопроса наций и происхождения. По крайней мере, так звучала реклама.",
+        "Сейчас это город размером с небольшую страну, разделённый на два вертикальных уровня. На нижнем преимущественно обитают преступные синдикаты, на верхнем — корпорации, хотя и там хватает трущоб для тех, кто не выдержал жизни внизу.",
+        "На крышах небоскрёбов верхнего уровня установлена артиллерия против вторжений извне. В особых случаях, когда оборону прорывают, здания уходят под землю в специальные карманы.",
+        "Где именно находится Содом, не знает никто: аномалия искажает восприятие, и без проводника путь до города не найти."
+      ],
+      links: []
+    }
+  ],
+
+  characters: [
+    {
+      id: "char-director",
+      tag: "ДИРЕКТОР",
+      locked: true,
+      title: "Директор Nadir Industries",
+      preview: "[ДАННЫЕ ЗАСЕКРЕЧЕНЫ]",
+      body: [],
+      links: []
+    }
+  ],
+
+  glossary: [
+    {
+      id: "gloss-marks",
+      tag: "ВАЛЮТА",
+      title: "Марки",
+      preview: "Единая валюта высших сословий, привязанная к акциям корпораций.",
+      body: [
+        "В Содоме валюта делится по сословиям. Низшие сословия чаще используют бартер, а не деньги — в ход идёт всё: продукты питания, чистая вода, боеприпасы, медикаменты.",
+        "Высшие сословия пользуются единой системой — Марками, чтобы избежать хаоса и выстроить выгодные экономические отношения между корпорациями. Марки напрямую привязаны к акциям корпораций."
+      ],
+      links: []
+    },
+    {
+      id: "gloss-classes",
+      tag: "ОБЩЕСТВО",
+      title: "Сословия",
+      preview: "Верхний и нижний уровни Содома живут в двух разных мирах.",
+      body: [
+        "Содом разделён на два вертикальных уровня. Нижний населяют преимущественно бедные и маргинальные слои населения, там же обосновались преступные синдикаты.",
+        "Верхний уровень — территория корпораций: высокие бетонные небоскрёбы с артиллерией на крышах. Но и там хватает трущоб — для тех, кто не выдержал жизни внизу, но так и не смог попасть в корпоративный мир."
+      ],
+      links: ["loc-sodom"]
+    }
+  ],
+
+  /* ЯЧЕЙКА-7 — личные дела оперативников-игроков. Пока пусто.
+     Шаблон записи (раскомментируй и заполни; тот же формат, что и у остальных категорий):
+     {
+       id: "cell7-имя",
+       tag: "ОПЕРАТИВНИК · ЯЧЕЙКА-7",
+       title: "Позывной",
+       preview: "Одна строка для карточки.",
+       body: ["Абзац 1.", "Абзац 2."],
+       links: []
+     }
+  */
+  cell7: [
+    {
+      id: "cell7- issahar",
+      tag: "ОПЕРАТИВНИК · ЯЧЕЙКА-7",
+      title: "Issahar",
+      preview: "Агитатор, революционер",
+      image: "assets/issachar.png",
+      body: [
+        "Суровый мужик, из каких чанов нижнего уровня достают таких ублюдков? Думаю, жить будет долго. А с квантовым бессмертием так вообще бесконечно!",
+        "Силён физически, не обделён тактическим мышлением и способностью трезво мыслить во время боя, ровно как и не лишён навыков обращения с оружием. В общем, из него выйдет неплохой ударный кулак ячейки."
+      ],
+      links: []
+    },
+    {
+      id: "cell7-kai",
+      tag: "ОПЕРАТИВНИК · ЯЧЕЙКА-7",
+      title: "Kai Röhrike",
+      preview: "Журналист",
+      image: "assets/kai-rohrike.png",
+      body: [
+        "Стрёмный мужик, смотрит странно, выглядит также. Но признаться честно, статьи у него неплохие. Даже интересно, как он умудрялся находить такие зверские убийства, неужто сам подстраивал?",
+        "Достаточно умён, расчётлив, и скорее всего манипулятор не хуже меня. Я бы назвал его левым полушарием, работай бы оно хоть у одного из группы."
+      ],
+      links: []
+    },
+    {
+      id: "cell7-edward",
+      tag: "ОПЕРАТИВНИК · ЯЧЕЙКА-7",
+      title: "Edward \"Prime-4\" North",
+      preview: "Боевик",
+      image: "assets/edward-north.png",
+      body: [
+        "Вот это интересный кадр, работал на одну очень интересную корпорацию в своё время, а потом пропал на 15 лет и достали его с конкретной такой амнезией. То есть военные преступления свои он забыл, а как держать пушку — нет.",
+        "Но так даже лучше, думаю на пару с Иссахаром у них выйдет отличный ударный кулак."
+      ],
+      links: ["cell7-issachar"]
+    },
+    {
+      id: "cell7-theodor",
+      tag: "ОПЕРАТИВНИК · ЯЧЕЙКА-7",
+      title: "Theodor von Rosenfeld",
+      preview: "Учёный",
+      image: "assets/theodor-rosenfeld.png",
+      body: [
+        "Зиг хайль! Как сказал бы любой немец. Слова излишни — выходец из немецкого сектора и Nachtwächter, не уверен, насколько сильно ему вбили в голову идею о превосходстве его нации, но не буду рушить его розовый мир.",
+        "Так сказать, то что нация господ находится под гнётом низших рас — это другое."
+      ],
+      links: ["frac-nacht"]
+    }
+  ]
+};
+
+const CATEGORY_LABELS = {
+  chronology: "ХРОНОЛОГИЯ",
+  factions: "ФРАКЦИИ",
+  locations: "ЛОКАЦИИ",
+  characters: "ПЕРСОНАЖИ",
+  glossary: "ГЛОССАРИЙ",
+  cell7: "ЯЧЕЙКА-7"
+};
+
+/* ========================================================================== */
+
+let allEntries = {};
+Object.keys(DATA).forEach(cat => DATA[cat].forEach(e => allEntries[e.id] = {...e, category: cat}));
+
+let state = { view: "list", category: "chronology", articleId: null, query: "" };
+
+/* ==========================================================================
+   ПРОГРЕСС ИЗУЧЕНИЯ АРХИВА
+   Хранится в localStorage, переживает перезагрузку страницы.
+   Засекреченные (locked) записи не считаются ни в числителе, ни в знаменателе,
+   пока не появится реальный способ их открыть.
+   ========================================================================== */
+const VISITED_KEY = "nadir_visited_v1";
+function loadVisited(){
+  try{ return new Set(JSON.parse(localStorage.getItem(VISITED_KEY) || "[]")); }
+  catch(e){ return new Set(); }
+}
+function saveVisited(set){
+  try{ localStorage.setItem(VISITED_KEY, JSON.stringify([...set])); } catch(e){}
+}
+let visited = loadVisited();
+
+function readableTotal(){
+  return Object.values(allEntries).filter(e => !e.locked).length;
+}
+function updateProgress(){
+  const el = document.getElementById('progressCounter');
+  if(el) el.textContent = '· ИЗУЧЕНО: ' + visited.size + '/' + readableTotal();
+}
+function markVisited(id){
+  const e = allEntries[id];
+  if(!e || e.locked) return;
+  if(!visited.has(id)){
+    visited.add(id);
+    saveVisited(visited);
+    updateProgress();
+    if(visited.size === readableTotal()){
+      setTimeout(()=> flashFooterAlert("АРХИВ ПОЛНОСТЬЮ ИЗУЧЕН", 4000), 600);
+    }
+  } else {
+    updateProgress();
+  }
+}
+updateProgress();
+
+function renderNav(){
+  const nav = document.getElementById('nav');
+  let html = '<button id="randomBtn" class="random-btn">⟲ ЗАГЛЯНУТЬ В АРХИВ</button>';
+  html += '<div class="search-box"><input id="searchInput" placeholder="ПОИСК ПО АРХИВУ..." value="'+state.query+'"></div>';
+  Object.keys(CATEGORY_LABELS).forEach(cat=>{
+    const active = (state.view==='list' && state.category===cat) ? 'active' : '';
+    html += `<button class="cat ${active}" data-cat="${cat}">${CATEGORY_LABELS[cat]} <span class="count">[${DATA[cat].length}]</span></button>`;
+  });
+  nav.innerHTML = html;
+  document.getElementById('randomBtn').addEventListener('click', ()=>{
+    const ids = Object.keys(allEntries);
+    const id = ids[Math.floor(Math.random()*ids.length)];
+    playClick();
+    state.view='article'; state.articleId=id;
+    render(true);
+    closeNav();
+  });
+  nav.querySelectorAll('.cat').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      playClick();
+      state.view='list'; state.category=btn.dataset.cat; state.query='';
+      render(true); closeNav();
+    });
+  });
+  document.getElementById('searchInput').addEventListener('input', (e)=>{
+    state.query = e.target.value;
+    state.view = 'search';
+    render();
+  });
+}
+
+function openNav(){
+  document.getElementById('nav').classList.add('open');
+  document.getElementById('navBackdrop').classList.add('open');
+}
+function closeNav(){
+  document.getElementById('nav').classList.remove('open');
+  document.getElementById('navBackdrop').classList.remove('open');
+}
+document.getElementById('navToggle').addEventListener('click', ()=>{
+  document.getElementById('nav').classList.contains('open') ? closeNav() : openNav();
+});
+document.getElementById('navBackdrop').addEventListener('click', closeNav);
+
+const IMAGE_TAGS = new Set(["КОРПОРАЦИЯ", "ПРЕСТУПНЫЙ СИНДИКАТ", "ДИРЕКТОР"]);
+function expectsImage(e){ return !!e.image || IMAGE_TAGS.has(e.tag); }
+
+/* ---------- связи для графа: тип + краткое описание, а не голый факт ссылки ----------
+   Временно пусто — линии заполняются вручную. Формат элемента:
+   { a: "frac-x", b: "frac-y", type: "ally" | "rival" | "tie", label: "..." } */
+const GRAPH_RELATIONS = [];
+
+function cardHtml(e){
+  const defunct = e.status === 'defunct' ? '<span class="badge-defunct">БОЛЬШЕ НЕ СУЩЕСТВУЕТ</span>' : '';
+  const lockedTag = e.locked ? '<span class="badge-defunct">ДОСТУП ЗАПРЕЩЁН</span>' : '';
+  const lockedClass = e.locked ? ' locked' : '';
+  const image = e.image
+    ? `<div class="img-frame"><div class="img-skeleton">ЗАГРУЗКА<br>ИЗОБРАЖЕНИЯ...</div><img class="faction-image" src="${e.image}" alt="${e.title}" loading="lazy" onload="this.classList.add('loaded');this.previousElementSibling.classList.add('hide')"></div>`
+    : (expectsImage(e) ? `<div class="img-frame"><div class="img-skeleton img-skeleton-static">ЗАГРУЗКА<br>ИЗОБРАЖЕНИЯ...</div></div>` : '');
+  return `<div class="entry-card${lockedClass}" data-id="${e.id}">
+    ${image}
+    <div class="tag">${e.tag}${defunct}${lockedTag}</div>
+    <h3>${e.title}</h3>
+    <p>${e.preview}</p>
+  </div>`;
+}
+
+function timelineItemHtml(e){
+  const lockedClass = e.locked ? ' locked' : '';
+  const title = e.locked ? '[ДАННЫЕ ЗАСЕКРЕЧЕНЫ]' : e.title;
+  return `<div class="timeline-item${lockedClass}" data-id="${e.id}">
+    <div class="timeline-date">${e.tag}</div>
+    <h3>${title}</h3>
+    <p>${e.preview}</p>
+  </div>`;
+}
+
+function renderList(){
+  const main = document.getElementById('main');
+  const entries = DATA[state.category];
+  let html = `<div class="list-title">${CATEGORY_LABELS[state.category]}<span class="cursor">&nbsp;</span></div>`;
+  if(entries.length === 0){
+    html += state.category === 'cell7'
+      ? `<div class="empty-note">ЛИЧНЫЕ ДЕЛА НЕ НАЙДЕНЫ.<br>ЯЧЕЙКА-7 НЕ УКОМПЛЕКТОВАНА.</div>`
+      : `<div class="empty-note">Записей пока нет. Добавь объект в массив DATA.${state.category} в html-файле.</div>`;
+  } else if(state.category === 'chronology'){
+    html += `<div class="timeline">${entries.map(timelineItemHtml).join('')}</div>`;
+  } else {
+    let seenSyndicates = false;
+    const cards = entries.map(e => {
+      if(e.tag === 'ПРЕСТУПНЫЙ СИНДИКАТ' && !seenSyndicates){
+        seenSyndicates = true;
+        return `<div class="faction-divider">ПРЕСТУПНЫЕ СИНДИКАТЫ</div>${cardHtml(e)}`;
+      }
+      return cardHtml(e);
+    }).join('');
+    const graphBtn = (state.category === 'factions' || state.category === 'characters')
+      ? `<button id="graphBtn" class="graph-toggle-btn">\u{1F578} ГРАФ СВЯЗЕЙ</button>` : '';
+    html += graphBtn + `<div class="entry-grid">${cards}</div>`;
+  }
+  main.innerHTML = html;
+  main.querySelectorAll('.entry-card, .timeline-item').forEach(c=>{
+    c.addEventListener('click', ()=>{
+      if(c.classList.contains('locked')) playDenied(); else playClick();
+      state.view='article'; state.articleId=c.dataset.id; render(true); closeNav();
+    });
+  });
+  const graphBtn = document.getElementById('graphBtn');
+  if(graphBtn) graphBtn.addEventListener('click', ()=>{ playClick(); state.view='graph'; render(true); });
+}
+
+function renderSearch(){
+  const main = document.getElementById('main');
+  const q = state.query.trim().toLowerCase();
+  const results = Object.values(allEntries).filter(e =>
+    e.title.toLowerCase().includes(q) || e.preview.toLowerCase().includes(q) || e.body.join(' ').toLowerCase().includes(q)
+  );
+  let html = `<div class="list-title">РЕЗУЛЬТАТЫ ПОИСКА: "${state.query}" [${results.length}]<span class="cursor">&nbsp;</span></div>`;
+  if(results.length === 0){
+    html += `<div class="empty-note">Совпадений не найдено.</div>`;
+  } else {
+    html += `<div class="entry-grid">${results.map(cardHtml).join('')}</div>`;
+  }
+  main.innerHTML = html;
+  main.querySelectorAll('.entry-card').forEach(c=>{
+    c.addEventListener('click', ()=>{
+      if(c.classList.contains('locked')) playDenied(); else playClick();
+      state.view='article'; state.articleId=c.dataset.id; render(true); closeNav();
+    });
+  });
+}
+
+function renderArticle(){
+  const main = document.getElementById('main');
+  const e = allEntries[state.articleId];
+  if(!e){ state.view='list'; render(); return; }
+  markVisited(e.id);
+  let html = `<div class="breadcrumb"><span data-back="1">\u2039 НАЗАД</span></div>`;
+  html += `<div class="article">`;
+  const defunct = e.status === 'defunct' ? '<span class="badge-defunct">БОЛЬШЕ НЕ СУЩЕСТВУЕТ</span>' : '';
+  html += `<div class="tag">${e.tag}${defunct}</div>`;
+  html += `<h2>${e.title}</h2>`;
+  if(e.locked){
+    html += `<div class="denied">ДОСТУП ЗАПРЕЩЁН · УРОВЕНЬ ДОПУСКА НЕДОСТАТОЧЕН</div>`;
+    const widths = [92, 68, 84, 40, 75, 55];
+    widths.forEach(w=>{ html += `<div class="redacted-bar" style="width:${w}%;"></div>`; });
+  } else {
+    if(e.image){
+      html += `<div class="img-frame"><div class="img-skeleton">ЗАГРУЗКА ИЗОБРАЖЕНИЯ...</div><img class="article-image" src="${e.image}" alt="${e.title}" onload="this.classList.add('loaded');this.previousElementSibling.classList.add('hide')"></div>`;
+    } else if(expectsImage(e)){
+      html += `<div class="img-frame"><div class="img-skeleton img-skeleton-static">ЗАГРУЗКА ИЗОБРАЖЕНИЯ...</div></div>`;
+    }
+    if(e.art){
+      html += `<div class="img-frame art-frame"><div class="img-skeleton">ЗАГРУЗКА ИЗОБРАЖЕНИЯ...</div><img class="art-image" src="${e.art}" alt="${e.title}" onload="this.classList.add('loaded');this.previousElementSibling.classList.add('hide')"></div>`;
+    }
+    if(e.motto) html += `<div class="motto">${e.motto}</div>`;
+    html += `<div class="body-text">${e.body.map(()=>`<p></p>`).join('')}</div>`;
+    if(e.links && e.links.length){
+      html += `<div class="links"><div class="lbl">СВЯЗАННЫЕ ЗАПИСИ</div>`;
+      e.links.forEach(id=>{
+        const linked = allEntries[id];
+        if(linked) html += `<span class="link-btn" data-id="${id}">${linked.title}</span>`;
+      });
+      html += `</div>`;
+    }
+  }
+  html += `</div>`;
+  main.innerHTML = html;
+  if(!e.locked){
+    typewriteParagraphs(main, e.body, ()=>{
+      wrapWordsForCorruption(main);
+      startCorruption(main);
+    });
+  } else {
+    clearCorruption();
+  }
+  const backBtn = main.querySelector('[data-back]');
+  if(backBtn) backBtn.addEventListener('click', ()=>{ playClick(); state.view='list'; render(true); });
+  const catBtn = main.querySelector('[data-cat]');
+  if(catBtn) catBtn.addEventListener('click', (ev)=>{ playClick(); state.view='list'; state.category=ev.target.dataset.cat; render(true); });
+  main.querySelectorAll('.link-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{ playClick(); state.view='article'; state.articleId=b.dataset.id; render(true); });
+  });
+}
+
+/* ---------- граф связей (фракции + персонажи) ---------- */
+function renderGraph(){
+  const main = document.getElementById('main');
+  const nodes = DATA.factions;
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const W = 820, H = 560, cx = W/2, cy = H/2;
+  const R = Math.min(W,H)/2 - 80;
+
+  const positions = {};
+  nodes.forEach((n,i)=>{
+    const angle = (i / nodes.length) * Math.PI * 2 - Math.PI/2;
+    positions[n.id] = { x: cx + R*Math.cos(angle), y: cy + R*Math.sin(angle) };
+  });
+
+  let edgesSvg = '';
+  GRAPH_RELATIONS.forEach(rel=>{
+    if(!nodeIds.has(rel.a) || !nodeIds.has(rel.b)) return;
+    const a = positions[rel.a], b = positions[rel.b];
+    edgesSvg += `<g class="graph-edge-group ${rel.type}" data-type="${rel.type}" data-label="${rel.label}">
+      <line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" class="edge-hit"/>
+      <line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" class="graph-edge ${rel.type}"><title>${rel.label}</title></line>
+    </g>`;
+  });
+
+  let nodesSvg = '';
+  nodes.forEach(n=>{
+    const p = positions[n.id];
+    let cls = 'graph-node';
+    if(n.locked) cls += ' locked';
+    else if(n.tag === 'ПРЕСТУПНЫЙ СИНДИКАТ') cls += ' syn';
+    else if(n.tag === 'КОРПОРАЦИЯ') cls += ' corp';
+    else cls += ' char';
+    const label = n.locked ? '[ЗАСЕКРЕЧЕНО]' : n.title;
+    nodesSvg += `<g class="${cls}" data-id="${n.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)})">
+      <circle r="20"></circle>
+      <text y="36" text-anchor="middle">${label}</text>
+    </g>`;
+  });
+
+  const html = `<div class="breadcrumb"><span data-back-graph="1">\u2039 НАЗАД</span></div>
+    <div class="list-title">ГРАФ СВЯЗЕЙ<span class="cursor">&nbsp;</span></div>
+    <div class="graph-wrap">
+      <svg class="graph-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+        <g class="graph-edges">${edgesSvg}</g>
+        <g class="graph-nodes">${nodesSvg}</g>
+      </svg>
+      <div id="graphInfo" class="graph-info-panel"></div>
+    </div>
+    <div class="graph-legend"><span class="dot corp"></span>КОРПОРАЦИИ<span class="dot syn"></span>СИНДИКАТЫ<span class="dot locked"></span>ЗАСЕКРЕЧЕНО</div>
+    ${edgesSvg ? `<div class="graph-legend-edges"><span class="line ally"></span>СОЮЗ<span class="line rival"></span>КОНФЛИКТ<span class="line tie"></span>СВЯЗЬ/ЭКОНОМИКА</div>` : ''}`;
+
+  main.innerHTML = html;
+  const backBtn = main.querySelector('[data-back-graph]');
+  if(backBtn) backBtn.addEventListener('click', ()=>{ playClick(); state.view='list'; render(true); });
+  main.querySelectorAll('.graph-node').forEach(g=>{
+    g.addEventListener('click', ()=>{
+      const id = g.dataset.id;
+      const entry = allEntries[id];
+      if(entry.locked) playDenied(); else playClick();
+      state.view='article'; state.articleId=id; render(true); closeNav();
+    });
+  });
+  const infoEl = document.getElementById('graphInfo');
+  main.querySelectorAll('.graph-edge-group').forEach(g=>{
+    const show = ()=>{
+      if(!infoEl) return;
+      infoEl.textContent = g.dataset.label;
+      infoEl.className = 'graph-info-panel visible ' + g.dataset.type;
+    };
+    const hide = ()=>{
+      if(!infoEl) return;
+      infoEl.textContent = '';
+      infoEl.className = 'graph-info-panel';
+    };
+    g.addEventListener('mouseenter', show);
+    g.addEventListener('mouseleave', hide);
+    g.addEventListener('click', show);
+  });
+}
+
+const CORRUPTION = { chronology: 2, factions: 1, locations: 1, characters: 3, glossary: 0, cell7: 2 };
+
+function applyCorruption(){
+  const app = document.getElementById('app');
+  const lvl = (state.view === 'search' || state.view === 'graph') ? 1 : (CORRUPTION[state.category] ?? 1);
+  app.className = ('wrap ' + app.className.replace(/\bwrap\b/g,'').replace(/\bcorrupt-\d\b/g,'')).trim();
+  app.classList.add('corrupt-' + lvl);
+}
+
+function render(glitch){
+  if(state.view !== 'article'){ clearCorruption(); }
+  if(glitch){
+    const app = document.getElementById('app');
+    app.classList.add('glitch-active');
+    playStatic();
+    setTimeout(()=> app.classList.remove('glitch-active'), 240);
+  }
+  renderNav();
+  if(state.view==='list') renderList();
+  else if(state.view==='article') renderArticle();
+  else if(state.view==='search') renderSearch();
+  else if(state.view==='graph') renderGraph();
+  applyCorruption();
+  document.getElementById('main').scrollTop = 0;
+}
+
+/* ==========================================================================
+   ЗВУК (синтезируется на лету через Web Audio API — без внешних файлов)
+   ========================================================================== */
+let audioCtx = null;
+function getAudioCtx(){
+  if(!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    audioCtx = new AC();
+  }
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playClick(){
+  try{
+    const ctx = getAudioCtx(); if(!ctx) return;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'square'; o.frequency.setValueAtTime(340, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.06);
+    g.gain.setValueAtTime(0.05, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.09);
+  }catch(err){}
+}
+function playDenied(){
+  try{
+    const ctx = getAudioCtx(); if(!ctx) return;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(110, ctx.currentTime);
+    g.gain.setValueAtTime(0.05, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.23);
+  }catch(err){}
+}
+function playStatic(){
+  try{
+    const ctx = getAudioCtx(); if(!ctx) return;
+    const dur = 0.16;
+    const buffer = ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++) data[i] = (Math.random()*2-1) * 0.35;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.05, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    noise.connect(g); g.connect(ctx.destination);
+    noise.start();
+  }catch(err){}
+}
+function playPowerOn(){
+  try{
+    const ctx = getAudioCtx(); if(!ctx) return;
+    const t0 = ctx.currentTime;
+    /* descending buzz, like a CRT degaussing/warming up */
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(900, t0);
+    o.frequency.exponentialRampToValueAtTime(55, t0 + 0.45);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.06, t0 + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t0); o.stop(t0 + 0.56);
+    /* brief noise burst under the buzz, like a static pop */
+    const dur = 0.12;
+    const buffer = ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++) data[i] = (Math.random()*2-1) * 0.5;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.07, t0);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    noise.connect(ng); ng.connect(ctx.destination);
+    noise.start(t0);
+  }catch(err){}
+}
+
+/* ==========================================================================
+   ПЕЧАТАЮЩИЙСЯ ТЕКСТ
+   ========================================================================== */
+let typewriterTimers = [];
+function clearTypewriters(){
+  typewriterTimers.forEach(t=>clearTimeout(t));
+  typewriterTimers = [];
+}
+function typewriteParagraphs(container, paragraphs, onComplete){
+  clearTypewriters();
+  const els = container.querySelectorAll('.body-text p');
+  let pi = 0;
+  function typeNext(){
+    if(pi >= els.length){ if(onComplete) onComplete(); return; }
+    const el = els[pi];
+    const full = paragraphs[pi] || '';
+    let ci = 0;
+    function step(){
+      if(ci <= full.length){
+        el.textContent = full.slice(0, ci) + (ci < full.length ? '▋' : '');
+        ci += 2;
+        typewriterTimers.push(setTimeout(step, 8 + Math.random()*10));
+      } else {
+        el.textContent = full;
+        pi++;
+        typewriterTimers.push(setTimeout(typeNext, 140));
+      }
+    }
+    step();
+  }
+  typeNext();
+}
+
+/* ==========================================================================
+   ГЛИТЧ-ИСКАЖЕНИЕ СЛОВ (текст статьи медленно "портится" со временем,
+   пока запись не будет открыта заново)
+   ========================================================================== */
+let corruptionTimer = null;
+function clearCorruption(){
+  if(corruptionTimer) clearInterval(corruptionTimer);
+  corruptionTimer = null;
+}
+function corruptWord(word){
+  const glitchChars = ['#','%','&','@','$','░','▒','▓','×','†','‡','§','¤','■'];
+  return word.split('').map(ch=>{
+    if(/[\s.,:;!?"«»()—-]/.test(ch)) return ch;
+    return Math.random() < 0.5 ? glitchChars[Math.floor(Math.random()*glitchChars.length)] : ch;
+  }).join('');
+}
+function wrapWordsForCorruption(container){
+  const paragraphs = container.querySelectorAll('.body-text p');
+  paragraphs.forEach(p=>{
+    const tokens = p.textContent.split(/(\s+)/);
+    p.innerHTML = tokens.map(t=>{
+      if(/^\s*$/.test(t) || t.length === 0) return t;
+      const safe = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return '<span class="word" data-original="' + safe.replace(/"/g,'&quot;') + '">' + safe + '</span>';
+    }).join('');
+  });
+}
+function startCorruption(container){
+  clearCorruption();
+  corruptionTimer = setInterval(()=>{
+    const words = container.querySelectorAll('.body-text .word');
+    if(!words.length) return;
+    const el = words[Math.floor(Math.random()*words.length)];
+    el.textContent = corruptWord(el.dataset.original);
+    el.classList.add('corrupted-word');
+  }, 22000 + Math.random()*18000);
+}
+
+/* ==========================================================================
+   СИСТЕМНЫЕ СООБЩЕНИЯ
+   ========================================================================== */
+const SYS_MESSAGES = ["ХРАНИ ВЕРНОСТЬ", "ИСКУПЛЕНИЕ БЛИЗКО", "НЕ СОМНЕВАЙСЯ В НАДИР", "ОТКАЖИСЬ ОТ ГРЕХА", "СЛУЖИ ВЕРНО"];
+
+function flashFooterAlert(text, duration){
+  const bar = document.getElementById('footerBar');
+  const el = document.getElementById('footerAlert');
+  if(!bar || !el) return;
+  el.textContent = text;
+  bar.classList.add('alerting');
+  requestAnimationFrame(()=> el.classList.add('show'));
+  setTimeout(()=>{
+    el.classList.remove('show');
+    setTimeout(()=>{ bar.classList.remove('alerting'); }, 350);
+  }, duration || 2200);
+}
+
+function showSysMessage(){
+  const cmdEl = document.getElementById('cmdInput');
+  if(cmdEl && (document.activeElement === cmdEl || cmdEl.value)){
+    setTimeout(showSysMessage, 5000);
+    return;
+  }
+  flashFooterAlert(SYS_MESSAGES[Math.floor(Math.random()*SYS_MESSAGES.length)], 7000);
+  scheduleSysMessage(false);
+}
+function scheduleSysMessage(isFirst){
+  const delay = isFirst ? (40000 + Math.random()*15000) : (55000 + Math.random()*35000);
+  setTimeout(showSysMessage, delay);
+}
+scheduleSysMessage(true);
+
+/* ==========================================================================
+   ТЕРМИНАЛ КОМАНД
+   ========================================================================== */
+function findEntryByQuery(q){
+  q = q.trim().toLowerCase();
+  if(!q) return null;
+  const ids = Object.keys(allEntries);
+  let match = ids.find(id => id.toLowerCase() === q || id.toLowerCase() === 'frac-'+q || id.toLowerCase() === 'char-'+q || id.toLowerCase() === 'chron-'+q || id.toLowerCase() === 'loc-'+q || id.toLowerCase() === 'gloss-'+q);
+  if(match) return allEntries[match];
+  match = ids.find(id => allEntries[id].title.toLowerCase() === q);
+  if(match) return allEntries[match];
+  match = ids.find(id => allEntries[id].title.toLowerCase().includes(q) || id.toLowerCase().includes(q));
+  return match ? allEntries[match] : null;
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: cell_06 — переход на cell_06.html (не упоминается в help)
+   ========================================================================== */
+function cell06Transition(){
+  if(window.__c06) return; window.__c06 = true;
+  const st = document.createElement('style');
+  st.textContent =
+    '@keyframes c06hue{0%{filter:none}18%{filter:hue-rotate(40deg) saturate(1.5)}24%{filter:none}' +
+    '42%{filter:hue-rotate(205deg) saturate(2) contrast(1.2)}50%{filter:hue-rotate(120deg)}' +
+    '58%,100%{filter:hue-rotate(205deg) saturate(2.4) contrast(1.35) brightness(1.1)}}' +
+    '@keyframes c06shake{0%,100%{transform:none}10%{transform:translate(-6px,2px)}25%{transform:translate(8px,-3px)}' +
+    '40%{transform:translate(-10px,0) skewX(2deg)}60%{transform:translate(12px,3px)}80%{transform:translate(-5px,-2px)}}' +
+    '@keyframes c06ov{0%,52%{opacity:0;background:#ff2438}62%{opacity:.85}68%{opacity:0}' +
+    '76%{opacity:1;background:#ff2438}84%,100%{opacity:1;background:#000}}' +
+    'html.c06{animation:c06hue 2.2s forwards}' +
+    'html.c06 #app{animation:c06shake .5s linear 2 .3s}' +
+    '#c06ov{position:fixed;inset:0;z-index:99999;pointer-events:none;animation:c06ov 2.2s forwards;' +
+    'background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 2px,transparent 2px 5px)}';
+  document.head.appendChild(st);
+  const ov = document.createElement('div'); ov.id = 'c06ov'; document.body.appendChild(ov);
+  document.documentElement.classList.add('c06');
+  try{
+    const c = getAudioCtx();
+    if(ambientOut) ambientOut.gain.setTargetAtTime(0, c.currentTime, 0.5);   // глушим эмбиент
+    const t = c.currentTime;
+    // нарастающий вой
+    const o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(55,t); o.frequency.exponentialRampToValueAtTime(880,t+1.7);
+    lp.type='lowpass'; lp.frequency.setValueAtTime(300,t); lp.frequency.exponentialRampToValueAtTime(3500,t+1.7);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.14,t+1.6); g.gain.exponentialRampToValueAtTime(0.0001,t+1.85);
+    o.connect(lp); lp.connect(g); g.connect(c.destination); o.start(t); o.stop(t+1.9);
+    // шумовой разрыв
+    const len = c.sampleRate*1.8, buf = c.createBuffer(1,len,c.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    const n = c.createBufferSource(), ng = c.createGain();
+    n.buffer = buf; ng.gain.setValueAtTime(0.0001,t+0.6);
+    ng.gain.exponentialRampToValueAtTime(0.12,t+1.6); ng.gain.exponentialRampToValueAtTime(0.0001,t+1.85);
+    n.connect(ng); ng.connect(c.destination); n.start(t);
+    // суб-удар в момент вспышки
+    const s = c.createOscillator(), sg = c.createGain();
+    s.type='sine'; s.frequency.setValueAtTime(80,t+1.65); s.frequency.exponentialRampToValueAtTime(26,t+2.4);
+    sg.gain.setValueAtTime(0.0001,t+1.65); sg.gain.exponentialRampToValueAtTime(0.7,t+1.68); sg.gain.exponentialRampToValueAtTime(0.0001,t+2.4);
+    s.connect(sg); sg.connect(c.destination); s.start(t+1.65); s.stop(t+2.5);
+  }catch(err){}
+  flashFooterAlert("ПОДКЛЮЧЕНИЕ: CELL_06", 1800);
+  setTimeout(()=>{ location.href = 'cell_06.html'; }, 2300);
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: forgive_me — экран ломается, гаснет, переход на forgive_me.html
+   ========================================================================== */
+function forgiveTransition(){
+  if(window.__f06) return; window.__f06 = true;
+  const st = document.createElement('style');
+  st.textContent =
+    '@keyframes f06body{' +
+    '0%{transform:none;filter:none}' +
+    '8%{transform:translateX(-14px) skewX(3deg);filter:hue-rotate(90deg) saturate(2)}' +
+    '12%{transform:translateX(16px);filter:invert(1)}' +
+    '14%{transform:none;filter:none}' +
+    '30%{transform:translate(8px,-4px);filter:contrast(2) brightness(1.4)}' +
+    '34%{transform:translate(-12px,3px) skewX(-4deg);filter:invert(1) hue-rotate(180deg)}' +
+    '38%{transform:none;filter:none}' +
+    '52%{transform:none;filter:grayscale(1) brightness(1.6)}' +
+    '72%{transform:scaleY(.006);filter:grayscale(1) brightness(4)}' +
+    '88%{transform:scale(.004,.006);filter:grayscale(1) brightness(7);opacity:1}' +
+    '100%{transform:scale(0,.006);opacity:0}}' +
+    '@keyframes f06ov{0%,78%{opacity:0}100%{opacity:1}}' +
+    'body.f06{animation:f06body 2.3s linear forwards}' +
+    '#f06ov{position:fixed;inset:0;z-index:99999;background:#000;pointer-events:none;animation:f06ov 2.3s forwards}';
+  document.head.appendChild(st);
+  const ov = document.createElement('div'); ov.id = 'f06ov'; document.body.appendChild(ov);
+  document.body.classList.add('f06');
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    if(ambientOut) ambientOut.gain.setTargetAtTime(0, t, 0.15);          // эмбиент глохнет
+    // рваная статика: шум, нарезанный на резкие всплески
+    const len = c.sampleRate*1.4, buf = c.createBuffer(1,len,c.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    const n = c.createBufferSource(), ng = c.createGain();
+    n.buffer = buf; ng.gain.setValueAtTime(0.0001,t);
+    for(let k=0;k<9;k++){ const a = t+k*0.14; ng.gain.setValueAtTime(0.16,a); ng.gain.setValueAtTime(0.0001,a+0.05+Math.random()*0.05); }
+    n.connect(ng); ng.connect(c.destination); n.start(t);
+    // писк выключающегося кинескопа: вниз и в ноль
+    const o = c.createOscillator(), g = c.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(1800,t+1.25); o.frequency.exponentialRampToValueAtTime(40,t+1.95);
+    g.gain.setValueAtTime(0.0001,t+1.25); g.gain.exponentialRampToValueAtTime(0.12,t+1.3); g.gain.exponentialRampToValueAtTime(0.0001,t+2.0);
+    o.connect(g); g.connect(c.destination); o.start(t+1.25); o.stop(t+2.05);
+  }catch(err){}
+  setTimeout(()=>{ location.href = 'forgive_me.html'; }, 2600);
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: adam-0 — терминал обесточивается, переход на adam_0.html
+   ========================================================================== */
+function adamTransition(){
+  if(window.__a06) return; window.__a06 = true;
+  const st = document.createElement('style');
+  st.textContent =
+    '@keyframes a06body{0%{filter:none}10%{filter:brightness(.25)}13%{filter:none}' +
+    '28%{filter:brightness(.15)}31%{filter:brightness(.9)}36%{filter:brightness(.1)}' +
+    '55%{filter:brightness(.5)}60%{filter:brightness(.05)}100%{filter:brightness(0)}}' +
+    '@keyframes a06ov{0%,60%{opacity:0}78%,100%{opacity:1}}' +
+    'body.a06{animation:a06body 2.4s linear forwards}' +
+    '#a06ov{position:fixed;inset:0;z-index:99999;background:#000;pointer-events:none;animation:a06ov 2.4s forwards}';
+  document.head.appendChild(st);
+  const ov = document.createElement('div'); ov.id = 'a06ov'; document.body.appendChild(ov);
+  document.body.classList.add('a06');
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    if(ambientOut) ambientOut.gain.setTargetAtTime(0, t, 0.1);
+    // гул трансформатора: просаживается на каждой вспышке, затем падает в ноль
+    const o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(100,t); o.frequency.setValueAtTime(100,t+1.3);
+    o.frequency.exponentialRampToValueAtTime(24,t+2.1);
+    lp.type='lowpass'; lp.frequency.value=400;
+    g.gain.setValueAtTime(0.11,t);
+    [[0.24,0.31],[0.67,0.74],[0.86,0.98]].forEach(([a,b])=>{ g.gain.setValueAtTime(0.0001,t+a); g.gain.setValueAtTime(0.11,t+b); });
+    g.gain.setValueAtTime(0.09,t+1.3); g.gain.exponentialRampToValueAtTime(0.0001,t+2.1);
+    o.connect(lp); lp.connect(g); g.connect(c.destination); o.start(t); o.stop(t+2.2);
+    // тяжёлый щелчок реле в момент окончательного обрыва
+    const s = c.createOscillator(), sg = c.createGain();
+    s.type='sine'; s.frequency.setValueAtTime(90,t+1.44); s.frequency.exponentialRampToValueAtTime(30,t+1.8);
+    sg.gain.setValueAtTime(0.0001,t+1.44); sg.gain.exponentialRampToValueAtTime(0.6,t+1.46); sg.gain.exponentialRampToValueAtTime(0.0001,t+1.85);
+    s.connect(sg); sg.connect(c.destination); s.start(t+1.44); s.stop(t+1.9);
+  }catch(err){}
+  setTimeout(()=>{ location.href = 'adam_0.html'; }, 2600);
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: james_taylor — терминал намертво виснет на 3 секунды,
+   затем переход на james_taylor.html
+   ========================================================================== */
+function jamesTransition(){
+  if(window.__j06) return; window.__j06 = true;
+  const st = document.createElement('style');
+  // заморозка: все анимации на паузе, курсор не мигает, ввод и клики мертвы
+  st.textContent = '*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}' +
+                   'body{pointer-events:none!important}';
+  document.head.appendChild(st);
+  const inp = document.getElementById('cmdInput');
+  if(inp){ inp.readOnly = true; inp.blur(); }
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    if(ambientOut) ambientOut.gain.setValueAtTime(0, t);                  // эмбиент обрывается
+    // «застрявший буфер»: 50 мс звука зациклены и жужжат все 3 секунды
+    const sr = c.sampleRate, n = Math.floor(sr*0.05), buf = c.createBuffer(1,n,sr), d = buf.getChannelData(0);
+    for(let i=0;i<n;i++){ const x=i/sr; d[i] = (Math.sin(6.2832*110*x)+0.5*Math.sin(6.2832*220*x)+0.25*Math.sin(6.2832*331*x))*0.4; }
+    const s = c.createBufferSource(), g = c.createGain();
+    s.buffer = buf; s.loop = true; g.gain.value = 0.12;
+    s.connect(g); g.connect(c.destination); s.start(t); s.stop(t+2.85);   // за мгновение до перехода — тишина
+  }catch(err){}
+  setTimeout(()=>{ location.href = 'james_taylor.html'; }, 3000);
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: 1916 — белая вспышка, звон, переход на last_day.html
+   ========================================================================== */
+function lastDayTransition(){
+  if(window.__l16) return; window.__l16 = true;
+  const calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;pointer-events:none;opacity:' + (calm ? 0 : 1) +
+                     (calm ? ';transition:opacity .5s' : '');
+  document.body.appendChild(ov);
+  if(calm) requestAnimationFrame(()=>{ ov.style.opacity = 1; });
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    if(ambientOut) ambientOut.gain.setValueAtTime(0, t);                       // эмбиент обрывается разом
+    // удар: приглушённый шумовой хлопок + суб
+    const len = Math.floor(c.sampleRate*0.6), buf = c.createBuffer(1,len,c.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    const n = c.createBufferSource(), lp = c.createBiquadFilter(), ng = c.createGain();
+    n.buffer = buf; lp.type='lowpass'; lp.frequency.value = 300;
+    ng.gain.setValueAtTime(0.7,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+    n.connect(lp); lp.connect(ng); ng.connect(c.destination); n.start(t);
+    const s = c.createOscillator(), sg = c.createGain();
+    s.type='sine'; s.frequency.setValueAtTime(70,t); s.frequency.exponentialRampToValueAtTime(24,t+0.9);
+    sg.gain.setValueAtTime(0.8,t); sg.gain.exponentialRampToValueAtTime(0.0001,t+1.0);
+    s.connect(sg); sg.connect(c.destination); s.start(t); s.stop(t+1.05);
+    // звон в ушах: остаётся после хлопка
+    const r = c.createOscillator(), rg = c.createGain();
+    r.frequency.value = 3150; rg.gain.setValueAtTime(0.0001,t); rg.gain.exponentialRampToValueAtTime(0.1,t+0.1);
+    rg.gain.exponentialRampToValueAtTime(0.06,t+1.9);
+    r.connect(rg); rg.connect(c.destination); r.start(t); r.stop(t+2.0);
+  }catch(err){}
+  setTimeout(()=>{ location.href = 'last_day.html'; }, 1900);
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: the binding — терминал заливает тёплым золотым светом,
+   тихий далёкий хор, переход на the_binding.html
+   ========================================================================== */
+function bindingTransition(){
+  if(window.__tb0) return; window.__tb0 = true;
+  const st = document.createElement('style');
+  st.textContent =
+    '@keyframes tb0body{0%{filter:none}100%{filter:brightness(.65) sepia(.55) saturate(1.7)}}' +
+    '@keyframes tb0ov{0%{opacity:0}100%{opacity:1}}' +
+    'body.tb0{animation:tb0body 2.6s ease-in forwards}' +
+    '#tb0ov{position:fixed;inset:0;z-index:99999;pointer-events:none;' +
+      'background:radial-gradient(ellipse at 50% 42%,rgba(255,225,150,.92),rgba(120,80,20,.55) 45%,#000 100%);' +
+      'opacity:0;animation:tb0ov 2.6s ease-in forwards}';
+  document.head.appendChild(st);
+  const ov = document.createElement('div'); ov.id = 'tb0ov'; document.body.appendChild(ov);
+  document.body.classList.add('tb0');
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    if(ambientOut) ambientOut.gain.setTargetAtTime(0, t, 0.7);
+    // далёкий хор: чистые тона, нарастающие очень медленно
+    const g = c.createGain(); g.connect(c.destination);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.15,t+2.1); g.gain.setValueAtTime(0.15,t+2.3);
+    [196,246.9,293.7,392].forEach((f,i)=>{
+      const o = c.createOscillator(); o.type='sine'; o.frequency.value = f*(1+i*0.0015);
+      o.connect(g); o.start(t); o.stop(t+2.6);
+    });
+  }catch(err){}
+  setTimeout(()=>{ location.href = 'the_binding.html'; }, 2600);
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: ascension — тряска и помехи, обрыв в чёрное, переход на ascension.html
+   ========================================================================== */
+function ascensionTransition(){
+  if(window.__asc) return; window.__asc = true;
+  const st = document.createElement('style');
+  st.textContent =
+    '@keyframes ascsh{0%{transform:translate(0,0)}10%{transform:translate(-3px,2px)}20%{transform:translate(4px,-3px)}30%{transform:translate(-6px,-2px)}40%{transform:translate(5px,4px)}50%{transform:translate(-9px,3px)}60%{transform:translate(8px,-6px)}70%{transform:translate(-12px,5px)}80%{transform:translate(11px,-8px)}90%{transform:translate(-16px,9px)}100%{transform:translate(14px,-10px)}}' +
+    '@keyframes ascf{0%{filter:none}60%{filter:contrast(1.4) saturate(1.5) hue-rotate(-12deg)}100%{filter:contrast(2) brightness(1.6) hue-rotate(-30deg) blur(1px)}}' +
+    '@keyframes ascn{0%{opacity:0}100%{opacity:.55}}' +
+    'body.asc{animation:ascsh .35s linear infinite,ascf 2.3s ease-in forwards}' +
+    '#ascov{position:fixed;inset:0;z-index:99999;pointer-events:none;mix-blend-mode:screen;' +
+      'background:repeating-linear-gradient(0deg,rgba(255,255,255,.14) 0 2px,transparent 2px 5px);animation:ascn 2.3s ease-in forwards}' +
+    '#ascblk{position:fixed;inset:0;z-index:100000;background:#000;opacity:0;pointer-events:none}';
+  document.head.appendChild(st);
+  const ov = document.createElement('div'); ov.id = 'ascov'; document.body.appendChild(ov);
+  const blk = document.createElement('div'); blk.id = 'ascblk'; document.body.appendChild(blk);
+  document.body.classList.add('asc');
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    if(ambientOut) ambientOut.gain.setValueAtTime(0, t+2.3);
+    const len = Math.floor(c.sampleRate*2.4), buf = c.createBuffer(1,len,c.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    const n = c.createBufferSource(), hp = c.createBiquadFilter(), ng = c.createGain();
+    n.buffer = buf; hp.type='highpass'; hp.frequency.value = 1200;
+    ng.gain.setValueAtTime(0.0001,t); ng.gain.exponentialRampToValueAtTime(0.5,t+2.29); ng.gain.setValueAtTime(0.0001,t+2.3);
+    n.connect(hp); hp.connect(ng); ng.connect(c.destination); n.start(t); n.stop(t+2.35);
+    const s = c.createOscillator(), sg = c.createGain();
+    s.type='sine'; s.frequency.setValueAtTime(40,t); s.frequency.exponentialRampToValueAtTime(70,t+2.29);
+    sg.gain.setValueAtTime(0.0001,t); sg.gain.exponentialRampToValueAtTime(0.7,t+2.29); sg.gain.setValueAtTime(0.0001,t+2.3);
+    s.connect(sg); sg.connect(c.destination); s.start(t); s.stop(t+2.35);
+  }catch(err){}
+  setTimeout(()=>{ blk.style.opacity = 1; }, 2300);   // резкий обрыв в чёрное
+  setTimeout(()=>{ location.href = 'ascension.html'; }, 2600);
+}
+
+/* ==========================================================================
+   СЛУЖЕБНАЯ КОМАНДА ВЕДУЩЕГО: debug_lenny_tsar_228 — список всех секреток.
+   Новая секретка = одна строка в SECRET_COMMANDS.
+   ========================================================================== */
+const SECRET_COMMANDS = [
+  { cmd:'cell_06',    note:'красная страница «Ибо мудрость мира сего…», поле кода (код пока не задан)' },
+  { cmd:'forgive_me', note:'чёрная страница: монолог Феликса, петля «Простите», вылет на терминал' },
+  { cmd:'adam-0',     note:'терминал обесточивается, золотой крест, 15 с, возврат' },
+  { cmd:'james_taylor', note:'зависание 3 с, хор слившихся тел, «Я скучаю по тебе, любимая»' },
+  { cmd:'1916',       note:'белая вспышка, гранитная стена имён (среди них James Taylor); Esc — выход' },
+  { cmd:'miracle_generator', note:'монолог Бога, золотые штампы строк, трещины наливаются кровью к финалу' },
+  { cmd:'primordial_solution', note:'пасхалка без перехода: рябь и надпись «МЫ ВСЁ ЕЩЁ ЗДЕСЬ» поверх терминала' },
+  { cmd:'nachtwachter', note:'разряд помех, переход на внешний сайт ЧВК Nachtwächter (nachtwachter.html)' },
+  { cmd:'the binding', note:'экран заливает тёплым золотым светом, тихий хор, переход на the_binding.html (предыстория Адама-0)' },
+  { cmd:'ascension', note:'тряска и помехи, обрыв в чёрное; эфир 1947 обрывается, счётчик живых до 0, тишина, белый свет, «Его оставили на потом» (ascension.html, Esc — выход)' },
+  { cmd:'cell_06 -> 453', note:'код Каин(4)Авель(5)Сиф(3) на cell_06 открывает cell6_dossier.html (Ячейка-6)' },
+  { cmd:'who am i',   note:'открывает Ячейку-7 (обычная команда, не секретка)', run:'whoami' },
+  { cmd:'debug_lenny_tsar_228', note:'эта панель', self:true }
+];
+function showSecretList(){
+  if(document.getElementById('secretPanel')) return;
+  playClick();
+  if(!document.getElementById('secretPanelCss')){
+    const st = document.createElement('style'); st.id = 'secretPanelCss';
+    st.textContent =
+      '#secretPanel{position:fixed;inset:0;z-index:90000;display:flex;align-items:center;justify-content:center;' +
+      'background:rgba(0,0,0,.9);padding:1rem}' +
+      '#secretPanel .sp-box{width:min(46rem,100%);max-height:88vh;overflow:auto;border:1px solid var(--green-dim);' +
+      'background:var(--bg-panel);padding:1.2rem 1.4rem;box-shadow:0 0 30px rgba(43,232,115,.15)}' +
+      '#secretPanel h2{margin:0 0 1rem;font-size:1rem;font-weight:400;color:var(--amber);letter-spacing:.08em}' +
+      '#secretPanel .sp-row{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);' +
+      'padding:.7rem .2rem;font:inherit;color:var(--green);cursor:pointer}' +
+      '#secretPanel .sp-row:hover,#secretPanel .sp-row:focus-visible{background:rgba(43,232,115,.08);outline:none}' +
+      '#secretPanel .sp-row.self{cursor:default;opacity:.55}' +
+      '#secretPanel .sp-cmd{color:var(--green-bright)}' +
+      '#secretPanel .sp-note{display:block;color:var(--green-dim);font-size:.85rem;margin-top:.2rem}' +
+      '#secretPanel .sp-hint{margin-top:1rem;font-size:.8rem;color:var(--green-dim)}';
+    document.head.appendChild(st);
+  }
+  const ov = document.createElement('div'); ov.id = 'secretPanel';
+  ov.innerHTML = '<div class="sp-box"><h2>СЛУЖЕБНЫЙ РЕЖИМ · СПИСОК КОМАНД</h2>' +
+    SECRET_COMMANDS.map((c,i)=>
+      '<button class="sp-row' + (c.self ? ' self' : '') + '" data-i="' + i + '"><span class="sp-cmd">&gt; ' + c.cmd +
+      '</span><span class="sp-note">' + c.note + '</span></button>').join('') +
+    '<div class="sp-hint">Клик по команде — запустить. Esc или клик вне окна — закрыть.</div></div>';
+  document.body.appendChild(ov);
+  const close = ()=>{ ov.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = (ev)=>{ if(ev.key === 'Escape'){ ev.stopPropagation(); close(); } };
+  document.addEventListener('keydown', onKey, true);
+  ov.addEventListener('click', (ev)=>{
+    if(ev.target === ov){ close(); return; }
+    const row = ev.target.closest('.sp-row'); if(!row) return;
+    const c = SECRET_COMMANDS[+row.dataset.i]; if(c.self) return;
+    close(); runCommand(c.run || c.cmd);
+  });
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: miracle_generator — экран озаряется золотом, гул органа,
+   переход на miracle_generator.html
+   ========================================================================== */
+function miracleTransition(){
+  if(window.__mg) return; window.__mg = true;
+  const st = document.createElement('style');
+  st.textContent =
+    '@keyframes mgbody{0%{filter:none}40%{filter:sepia(.4) saturate(1.6) brightness(1.15)}' +
+    '70%{filter:sepia(.6) saturate(2) brightness(1.4) contrast(1.1)}100%{filter:sepia(.7) saturate(2.4) brightness(2.2) contrast(1.2)}}' +
+    '@keyframes mgov{0%,72%{opacity:0}100%{opacity:1}}' +
+    'body.mg{animation:mgbody 2.4s ease-in forwards}' +
+    '#mgov{position:fixed;inset:0;z-index:99999;background:#fff2c4;pointer-events:none;animation:mgov 2.4s forwards}';
+  document.head.appendChild(st);
+  const ov = document.createElement('div'); ov.id = 'mgov'; document.body.appendChild(ov);
+  document.body.classList.add('mg');
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    if(ambientOut) ambientOut.gain.setTargetAtTime(0, t, 0.3);
+    // орган: нарастающий аккорд, идущий к вспышке
+    const notes = [110,164.8,220,277.2,329.6];
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.16,t+1.9);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+2.5); g.connect(c.destination);
+    notes.forEach((f,i)=>{ const o=c.createOscillator(); o.type = i%2?'sawtooth':'triangle'; o.frequency.value=f; o.connect(g); o.start(t); o.stop(t+2.6); });
+    // удар в момент вспышки
+    const s = c.createOscillator(), sg = c.createGain();
+    s.type='sine'; s.frequency.setValueAtTime(90,t+1.9); s.frequency.exponentialRampToValueAtTime(40,t+2.3);
+    sg.gain.setValueAtTime(0.0001,t+1.9); sg.gain.exponentialRampToValueAtTime(0.7,t+1.93); sg.gain.exponentialRampToValueAtTime(0.0001,t+2.4);
+    s.connect(sg); sg.connect(c.destination); s.start(t+1.9); s.stop(t+2.45);
+  }catch(err){}
+  setTimeout(()=>{ location.href = 'miracle_generator.html'; }, 2500);
+}
+
+/* ==========================================================================
+   ПАСХАЛКА: primordial_solution — экран рябит, в центре проступает надпись,
+   без перехода на другую страницу
+   ========================================================================== */
+function primordialEcho(){
+  if(document.getElementById('psEcho')) return;
+  if(!document.getElementById('psCss')){
+    const st = document.createElement('style'); st.id = 'psCss';
+    st.textContent =
+      '@keyframes psFlicker{0%,100%{opacity:1}4%{opacity:.2}6%{opacity:1}7%{opacity:.35}9%{opacity:1}' +
+      '38%{opacity:1}40%{opacity:.15}41%{opacity:1}72%{opacity:1}74%{opacity:.3}76%{opacity:1}}' +
+      '@keyframes psIn{0%{opacity:0;filter:blur(6px);letter-spacing:.6em}' +
+      '30%{opacity:.9;filter:blur(0);letter-spacing:.5em}70%{opacity:1}100%{opacity:0}}' +
+      '@keyframes psJit{0%,100%{transform:translate(0,0)}20%{transform:translate(-2px,1px)}' +
+      '50%{transform:translate(2px,-1px)}80%{transform:translate(-1px,1px)}}' +
+      '#psEcho{position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;' +
+      'pointer-events:none;background:rgba(0,0,0,.55);animation:psFlicker 4.8s steps(2) forwards}' +
+      '#psEcho span{font:700 clamp(1.6rem,6vw,3.2rem) var(--font-mono,monospace);color:var(--rust,#b3222f);' +
+      'text-shadow:0 0 18px rgba(179,34,47,.85),0 0 44px rgba(179,34,47,.4);' +
+      'animation:psIn 4.8s ease-in-out forwards,psJit .12s steps(2) infinite}';
+    document.head.appendChild(st);
+  }
+  const ov = document.createElement('div'); ov.id = 'psEcho';
+  ov.innerHTML = '<span>МЫ ВСЁ ЕЩЁ ЗДЕСЬ</span>';
+  document.body.appendChild(ov);
+  ov.addEventListener('animationend', e=>{ if(e.animationName === 'psFlicker') ov.remove(); });
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    const len = Math.floor(c.sampleRate*4.6), buf = c.createBuffer(1,len,c.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    const n = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain();
+    n.buffer = buf; bp.type='bandpass'; bp.frequency.value = 1800; bp.Q.value = .8;
+    ng.gain.setValueAtTime(.0001,t); ng.gain.exponentialRampToValueAtTime(.05,t+.3);
+    ng.gain.exponentialRampToValueAtTime(.05,t+3.6); ng.gain.exponentialRampToValueAtTime(.0001,t+4.6);
+    n.connect(bp); bp.connect(ng); ng.connect(c.destination); n.start(t);
+    const o = c.createOscillator(), og = c.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(58,t); o.frequency.setValueAtTime(61,t+2.3);
+    og.gain.setValueAtTime(.0001,t); og.gain.exponentialRampToValueAtTime(.09,t+.4);
+    og.gain.exponentialRampToValueAtTime(.09,t+3.8); og.gain.exponentialRampToValueAtTime(.0001,t+4.6);
+    o.connect(og); og.connect(c.destination); o.start(t); o.stop(t+4.65);
+  }catch(err){}
+}
+
+/* ==========================================================================
+   СКРЫТАЯ КОМАНДА: nachtwachter — короткий разряд помех, переход на
+   nachtwachter.html (внешний сайт ЧВК, вне общего дизайна архива)
+   ========================================================================== */
+function nachtwachterTransition(){
+  if(window.__nw) return; window.__nw = true;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#000;pointer-events:none;opacity:0';
+  ov.animate([{opacity:0},{opacity:1,offset:0.15},{opacity:.2,offset:0.3},{opacity:1,offset:0.5},{opacity:1}],
+    {duration:900, fill:'forwards'});
+  document.body.appendChild(ov);
+  playDenied();
+  setTimeout(()=>{ location.href = 'nachtwachter.html'; }, 950);
+}
+
+/* ==========================================================================
+   INTERCEPT — взлом чужих корпоративных сетей (мини-игра "узловой взлом")
+   Пароли/шифры пока не требуются — доступ открыт всем со статусом Nadir.
+   Новый узел = один объект в ICPT_NODES.
+   ========================================================================== */
+const ICPT_NODES = [
+  { key:'nachtwachter', name:'NACHTWÄCHTER', ice:'ВЫСОКИЙ', site:'nachtwachter.html',
+    flavor:'ЧВК у внешней стены. Патрульные частоты, цели зачистки, внутренняя переписка.',
+    sequences:[
+      { seq:['7A','FF'], reward:'ШИФР-КОД ПАТРУЛЬНОЙ ЧАСТОТЫ' },
+      { seq:['BD','7A','55'], reward:'СПИСОК ЦЕЛЕЙ — ОПЕРАЦИЯ «NACHTJAGD»' }
+    ]},
+  { key:'acheron', name:'ACHERON GRID', ice:'КРИТИЧЕСКИЙ', site:'acheron.html',
+    flavor:'Монополисты тепла и света. Реакторные протоколы, тарифы, засекреченная телеметрия нижних контуров.',
+    sequences:[
+      { seq:['E9','1C'], reward:'ПРОТОКОЛ АВАРИЙНОГО ЭНЕРГОРАСПРЕДЕЛЕНИЯ' },
+      { seq:['1C','FF','7A'], reward:'ТЕХНИЧЕСКИЙ ЖУРНАЛ ГЛУБИННОГО КОНТУРА — ОБЪЕКТ «СОММА-16»' },
+      { seq:['BD','E9','55','FF'], reward:'ЗАСЕКРЕЧЕННАЯ ПЕРЕПИСКА СОВЕТА ДИРЕКТОРОВ О NADIR INDUSTRIES' }
+    ]}
+];
+const ICPT_HEX = ['1C','55','BD','E9','7A','FF'];
+const ICPT_GSIZE = 5, ICPT_BUF = 6, ICPT_TIME = 40;
+let icptGame = null;
+
+function openIntercept(){
+  document.getElementById('interceptOverlay').classList.add('show');
+  document.getElementById('icptTimer').textContent = '';
+  renderIcptNodeList();
+}
+function closeIntercept(){
+  if(icptGame && icptGame.timer) clearInterval(icptGame.timer);
+  icptGame = null;
+  document.getElementById('interceptOverlay').classList.remove('show');
+  if(cmdInputEl) cmdInputEl.focus();
+}
+function renderIcptNodeList(){
+  let html = '<div class="icpt-label">ОБНАРУЖЕНЫ УЗЛЫ ЧУЖИХ КОРПОРАТИВНЫХ СЕТЕЙ:</div>';
+  ICPT_NODES.forEach((n,i)=>{
+    html += '<div class="icpt-node-row" onclick="icptSelectNode('+i+')">'
+      + '<h3>' + n.name + ' <span class="ice">— ЗАЩИТА: ' + n.ice + '</span></h3>'
+      + '<p>' + n.flavor + '</p></div>';
+  });
+  document.getElementById('icptBody').innerHTML = html;
+}
+function icptSelectNode(i){
+  playClick();
+  const node = ICPT_NODES[i];
+  document.getElementById('icptBody').innerHTML =
+    '<div class="icpt-label">УСТАНОВКА СОЕДИНЕНИЯ: ' + node.name + ' ...</div>';
+  setTimeout(()=> icptStartBreach(node), 500);
+}
+/* Строит ОДИН непрерывный путь по сетке длиной totalLen, начиная строго
+   с верхней строки (как того требует первый выбор в игре) и дальше
+   чередуя движение по столбцу/строке — ровно так же, как игрок ходит
+   по матрице. Все последовательности узла режутся из ЭТОГО ЖЕ пути
+   подряд, поэтому у игрока гарантированно есть один непрерывный маршрут,
+   который закрывает все цели разом — искать ничего невозможного не придётся. */
+function icptGenSolvablePath(totalLen, gsize){
+  for(let attempt=0; attempt<1000; attempt++){
+    const cells = [], seen = new Set();
+    let axis = 'row';
+    let r = 0, c = Math.floor(Math.random()*gsize);
+    let ok = true;
+    for(let i=0;i<totalLen;i++){
+      const key = r+','+c;
+      if(seen.has(key)){ ok=false; break; }
+      seen.add(key); cells.push([r,c]);
+      if(axis === 'row'){ r = Math.floor(Math.random()*gsize); axis='col'; }
+      else { c = Math.floor(Math.random()*gsize); axis='row'; }
+    }
+    if(ok) return cells;
+  }
+  return null; // за 1000 попыток не наберётся разве что при totalLen > gsize*gsize
+}
+function icptStartBreach(node){
+  const grid = Array.from({length:ICPT_GSIZE},()=>Array(ICPT_GSIZE).fill(null));
+  const totalLen = node.sequences.reduce((sum,s)=> sum + s.seq.length, 0);
+  const path = icptGenSolvablePath(totalLen, ICPT_GSIZE);
+  const placed = [];
+  if(path){
+    let idx = 0;
+    node.sequences.forEach(s=>{
+      path.slice(idx, idx + s.seq.length).forEach(([r,c], i)=>{ grid[r][c] = s.seq[i]; });
+      idx += s.seq.length;
+      placed.push(s);
+    });
+  }
+  for(let r=0;r<ICPT_GSIZE;r++) for(let c=0;c<ICPT_GSIZE;c++){
+    if(!grid[r][c]) grid[r][c] = ICPT_HEX[Math.floor(Math.random()*ICPT_HEX.length)];
+  }
+  // Буфер всегда вмещает суммарную длину целей узла (плюс запас ICPT_BUF),
+  // чтобы игрок физически успевал выбрать все нужные ячейки за один заход.
+  const bufSize = Math.max(ICPT_BUF, totalLen);
+  icptGame = {
+    node, grid, sequences: placed.map(s=>({...s, done:false})),
+    buffer:[], picks:[], axis:null, lockRow:null, lockCol:null, bufSize,
+    timeLeft: ICPT_TIME, timer:null
+  };
+  icptRenderBreach();
+  icptGame.timer = setInterval(()=>{
+    icptGame.timeLeft--;
+    if(icptGame.timeLeft <= 0){ clearInterval(icptGame.timer); icptEndBreach('ВРЕМЯ ИСТЕКЛО'); }
+    else icptRenderBreach();
+  }, 1000);
+}
+function icptCellAvailable(r,c){
+
+  const g = icptGame;
+  if(g.picks.some(p=>p[0]===r && p[1]===c)) return false;
+  if(g.picks.length === 0) return r === 0;
+  if(g.axis === 'col') return c === g.lockCol;
+  if(g.axis === 'row') return r === g.lockRow;
+  return false;
+}
+function icptPickCell(r,c){
+  const g = icptGame;
+  if(!icptCellAvailable(r,c) || g.buffer.length >= g.bufSize) return;
+  playClick();
+  const val = g.grid[r][c];
+  g.picks.push([r,c]); g.buffer.push(val);
+  g.lockRow = r; g.lockCol = c;
+  g.axis = (g.axis === 'row' || g.axis === null) ? 'col' : 'row';
+  g.sequences.forEach(s=>{
+    if(s.done) return;
+    for(let start=0; start<=g.buffer.length-s.seq.length; start++){
+      if(g.buffer.slice(start, start+s.seq.length).join(',') === s.seq.join(',')){ s.done = true; break; }
+    }
+  });
+  icptRenderBreach();
+  if(g.sequences.length && g.sequences.every(s=>s.done)){
+    setTimeout(()=> icptEndBreach('ВСЕ ПОСЛЕДОВАТЕЛЬНОСТИ ПОДОБРАНЫ', true), 250);
+  } else if(g.buffer.length >= g.bufSize){
+    setTimeout(()=> icptEndBreach('БУФЕР ЗАПОЛНЕН'), 250);
+  }
+}
+function icptRenderBreach(){
+  const g = icptGame; if(!g) return;
+  document.getElementById('icptTimer').textContent = g.timeLeft + 's';
+  document.getElementById('icptTimer').className = 'icpt-timer' + (g.timeLeft<=10?' low':'');
+  let html = '<div class="icpt-label">ВЗЛОМ: ' + g.node.name + ' // BREACH PROTOCOL</div><div class="icpt-body">';
+  html += '<div><div class="icpt-label">МАТРИЦА ДОСТУПА</div><div class="icpt-grid" style="--gsize:'+ICPT_GSIZE+'">';
+  for(let r=0;r<ICPT_GSIZE;r++) for(let c=0;c<ICPT_GSIZE;c++){
+    const used = g.picks.some(p=>p[0]===r && p[1]===c);
+    const avail = !used && icptCellAvailable(r,c) && g.buffer.length < g.bufSize;
+    html += '<div class="icpt-cell'+(avail?' avail':'')+(used?' used':'')+'" '
+      + (avail?('onclick="icptPickCell('+r+','+c+')"'):'') + '>' + g.grid[r][c] + '</div>';
+  }
+  html += '</div></div><div class="icpt-side"><div class="icpt-label">ЦЕЛЕВЫЕ ПОСЛЕДОВАТЕЛЬНОСТИ</div>';
+  g.sequences.forEach(s=>{
+    html += '<div class="icpt-seq"><div class="icpt-seq-vals">';
+    s.seq.forEach(v=> html += '<span class="'+(s.done?'done':'')+'">'+v+'</span>');
+    html += '</div><div class="icpt-seq-reward">'+(s.done?'✓ ЗАГРУЖЕНО — ':'')+s.reward+'</div></div>';
+  });
+  html += '<div class="icpt-label">БУФЕР ('+g.buffer.length+'/'+g.bufSize+')</div><div class="icpt-buf">';
+  for(let i=0;i<g.bufSize;i++){ const v=g.buffer[i]; html += '<div class="icpt-buf-slot'+(v?' filled':'')+'">'+(v||'')+'</div>'; }
+  html += '</div><div class="icpt-hint">Выбор идёт по строке/столбцу, как в узловом взломе. <b>ESC</b> — прервать соединение.</div></div></div>';
+  document.getElementById('icptBody').innerHTML = html;
+}
+function icptEndBreach(reason, success){
+  const g = icptGame;
+  if(g && g.timer) clearInterval(g.timer);
+  const got = g.sequences.filter(s=>s.done);
+  const missed = g.sequences.filter(s=>!s.done);
+  const label = success ? 'ВЗЛОМ ЗАВЕРШЁН: ' + reason : 'СОЕДИНЕНИЕ РАЗОРВАНО: ' + reason;
+  let html = '<div class="icpt-label">' + label + '</div>';
+  if(got.length){
+    html += '<div class="icpt-label" style="margin-top:10px;">ПЕРЕХВАЧЕНО:</div>';
+    got.forEach(s=> html += '<div class="icpt-result-line ok">✓ ' + s.reward + '</div>');
+  }
+  if(missed.length){
+    html += '<div class="icpt-label" style="margin-top:10px;">НЕ ПЕРЕХВАЧЕНО (шифр не вскрыт):</div>';
+    missed.forEach(s=> html += '<div class="icpt-result-line miss">✗ ' + s.reward + '</div>');
+  }
+  if(!got.length) html += '<div class="icpt-result-line fail">ЗАЩИТА ОБНАРУЖИЛА ВТОРЖЕНИЕ РАНЬШЕ, ЧЕМ ВЫ ПОЛУЧИЛИ ДАННЫЕ.</div>';
+  if(got.length && g.node.site){
+    html += '<div style="margin-top:14px;"><a href="'+g.node.site+'" target="_blank" rel="noopener" '
+      + 'style="display:inline-block;border:1px solid var(--amber);color:var(--amber);padding:8px 14px;'
+      + 'text-decoration:none;font-size:0.8rem;letter-spacing:1px;">ВЫГРУЗИТЬ ДАННЫЕ →</a></div>';
+  }
+  html += '<div class="icpt-hint" style="margin-top:14px;"><b>INTERCEPT</b> — начать новую сессию взлома. ESC — закрыть модуль.</div>';
+  document.getElementById('icptBody').innerHTML = html;
+  document.getElementById('icptTimer').textContent = '';
+  if(got.length) playClick(); else playDenied();
+  icptGame = null;
+}
+document.addEventListener('keydown', (ev)=>{
+  if(ev.key === 'Escape' && document.getElementById('interceptOverlay').classList.contains('show')){
+    closeIntercept();
+  }
+});
+
+function runCommand(raw){
+  const trimmed = raw.trim();
+  if(!trimmed) return;
+  const spaceIdx = trimmed.indexOf(' ');
+  const cmd = (spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx)).toLowerCase();
+  const arg = spaceIdx === -1 ? '' : trimmed.slice(spaceIdx + 1).trim();
+
+  if(cmd === 'help'){
+    flashFooterAlert("КОМАНДЫ: OPEN, SEARCH, RANDOM, GRAPH, WHOAMI, INTERCEPT, CLEAR", 3200);
+  } else if(cmd === 'graph'){
+    playClick();
+    state.view='graph'; render(true);
+    flashFooterAlert("ГРАФ СВЯЗЕЙ...", 1600);
+  } else if(cmd === 'whoami' || (cmd === 'who' && arg.toLowerCase().replace(/\s+/g,'') === 'ami')){
+    playClick();
+    state.view='list'; state.category='cell7'; state.query=''; render(true);
+    flashFooterAlert("СОТРУДНИК NADIR INDUSTRIES · ЯЧЕЙКА-7 · ДОСТУП: УРОВЕНЬ 1 · СТАТУС: АКТИВЕН", 3400);
+  } else if(cmd === 'random'){
+    playClick();
+    const ids = Object.keys(allEntries);
+    const id = ids[Math.floor(Math.random()*ids.length)];
+    state.view='article'; state.articleId=id; render(true);
+    flashFooterAlert("ОТКРЫВАЮ СЛУЧАЙНУЮ ЗАПИСЬ...", 1800);
+  } else if(cmd === 'search'){
+    if(!arg){ flashFooterAlert("УКАЖИТЕ ЗАПРОС: SEARCH <ТЕКСТ>", 2400); return; }
+    state.view='search'; state.query=arg; render(true);
+    flashFooterAlert('ПОИСК: "' + arg.toUpperCase() + '"', 2000);
+  } else if(cmd === 'open'){
+    if(!arg){ flashFooterAlert("УКАЖИТЕ ЗАПИСЬ: OPEN <НАЗВАНИЕ>", 2400); return; }
+    const entry = findEntryByQuery(arg);
+    if(entry){
+      playClick();
+      state.view='article'; state.articleId=entry.id; render(true);
+      flashFooterAlert("ОТКРЫВАЮ: " + entry.title.toUpperCase(), 2000);
+    } else {
+      playDenied();
+      flashFooterAlert("ЗАПИСЬ НЕ НАЙДЕНА: " + arg.toUpperCase(), 2400);
+    }
+  } else if(cmd === 'intercept'){
+    playClick();
+    flashFooterAlert("СКАНИРОВАНИЕ ЭФИРА...", 1400);
+    openIntercept();
+  } else if(cmd === 'nachtwachter' || cmd === 'nachtwächter'){
+    nachtwachterTransition();
+  } else if(cmd === 'cell_06'){
+    cell06Transition();
+  } else if(cmd === 'forgive_me'){
+    forgiveTransition();
+  } else if(cmd === 'adam-0' || cmd === 'adam_0'){
+    adamTransition();
+  } else if(cmd === 'james_taylor' || cmd === 'james-taylor' || (cmd === 'james' && arg.toLowerCase() === 'taylor')){
+    jamesTransition();
+  } else if(cmd === '1916'){
+    lastDayTransition();
+  } else if(cmd === 'debug_lenny_tsar_228'){
+    showSecretList();
+  } else if(cmd === 'miracle_generator'){
+    miracleTransition();
+  } else if(cmd === 'primordial_solution' || cmd === 'primordial-solution' || (cmd === 'primordial' && arg.toLowerCase() === 'solution')){
+    primordialEcho();
+  } else if(cmd === 'the_binding' || cmd === 'the-binding' || (cmd === 'the' && arg.toLowerCase().replace(/\s+/g,'') === 'binding')){
+    bindingTransition();
+  } else if(cmd === 'ascension' || cmd === 'вознесение'){
+    ascensionTransition();
+  } else if(cmd === 'clear'){
+    flashFooterAlert("ОК.", 1000);
+  } else {
+    flashFooterAlert("НЕИЗВЕСТНАЯ КОМАНДА. ВВЕДИТЕ 'HELP'.", 2400);
+  }
+}
+
+const cmdInputEl = document.getElementById('cmdInput');
+if(cmdInputEl){
+  cmdInputEl.addEventListener('keydown', (ev)=>{
+    if(ev.key === 'Enter'){
+      runCommand(cmdInputEl.value);
+      cmdInputEl.value = '';
+    }
+  });
+}
+
+/* ==========================================================================
+   ФОНОВЫЙ ЭМБИЕНТ (генеративный дрон, синтезируется на лету, без файлов)
+   Низкий гудящий фон + медленный фильтр-свип + редкие "щелчки реле" —
+   имитация гула серверов архива. Бесконечный, не имеет двух одинаковых циклов.
+   ========================================================================== */
+let musicOn = true;
+let ambientOut = null;   // master gain node the toggle button controls
+let ambientBuilt = false;
+
+function buildAmbient(ctx){
+  const out = ctx.createGain();
+  out.gain.value = 0;
+  if(musicOn) out.gain.setTargetAtTime(1, ctx.currentTime, 0.8);
+
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 600;
+  lp.connect(out);
+  out.connect(ctx.destination);
+
+  const bus = ctx.createGain();
+  bus.gain.value = 0.55;
+  bus.connect(lp);
+
+  /* slow LFO sweeping the lowpass cutoff, like a signal drifting */
+  const lpLfo = ctx.createOscillator();
+  lpLfo.frequency.value = 0.02;
+  const lpLfoGain = ctx.createGain();
+  lpLfoGain.gain.value = 260;
+  lpLfo.connect(lpLfoGain);
+  lpLfoGain.connect(lp.frequency);
+  lpLfo.start();
+
+  /* low detuned drone layers */
+  const freqs = [55, 82.5, 110, 164.8];
+  freqs.forEach((f, idx)=>{
+    const o = ctx.createOscillator();
+    o.type = idx % 2 === 0 ? 'sine' : 'triangle';
+    o.frequency.value = f * (1 + (Math.random()*0.006 - 0.003));
+    const g = ctx.createGain();
+    g.gain.value = 0.05 + idx*0.008;
+    o.connect(g); g.connect(bus);
+    o.start();
+
+    /* slow swell so each layer breathes independently */
+    const swell = ctx.createOscillator();
+    swell.frequency.value = 0.025 + Math.random()*0.05;
+    const swellGain = ctx.createGain();
+    swellGain.gain.value = 0.03;
+    swell.connect(swellGain);
+    swellGain.connect(g.gain);
+    swell.start();
+  });
+
+  /* filtered noise bed, like distant server-room hiss */
+  const bufferSize = ctx.sampleRate * 2;
+  const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = noiseBuffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * 0.3;
+  const noise = ctx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  noise.loop = true;
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = 900;
+  noiseFilter.Q.value = 0.6;
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.value = 0.025;
+  noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(bus);
+  noise.start();
+
+  /* occasional distant relay clicks / data pings */
+  function scheduleBlip(){
+    const delay = 5000 + Math.random()*11000;
+    setTimeout(()=>{
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = 650 + Math.random()*900;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.025, ctx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+      o.connect(g); g.connect(bus);
+      o.start(); o.stop(ctx.currentTime + 0.55);
+      scheduleBlip();
+    }, delay);
+  }
+  scheduleBlip();
+
+  return out;
+}
+
+function startAmbient(){
+  if(ambientBuilt) return;
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  ambientOut = buildAmbient(ctx);
+  ambientBuilt = true;
+}
+
+function setSoundBtnLabel(){
+  const btn = document.getElementById('soundToggle');
+  if(!btn) return;
+  btn.textContent = musicOn ? '♪ САУНДТРЕК: ON' : '♪ САУНДТРЕК: OFF';
+  btn.classList.toggle('on', musicOn);
+}
+setSoundBtnLabel();
+
+document.getElementById('soundToggle').addEventListener('click', ()=>{
+  playClick();
+  musicOn = !musicOn;
+  setSoundBtnLabel();
+  if(!ambientBuilt){ startAmbient(); return; }
+  const ctx = getAudioCtx();
+  if(ambientOut && ctx) ambientOut.gain.setTargetAtTime(musicOn ? 1 : 0, ctx.currentTime, 0.4);
+});
+
+/* boot sequence */
+function padCol(str, width){
+  str = String(str);
+  return str.length >= width ? str + ' ' : str + ' '.repeat(width - str.length);
+}
+
+let bootSkipped = false;
+
+function skipBoot(){
+  if(bootSkipped) return;
+  bootSkipped = true;
+  const skipBtn = document.getElementById('skipBoot');
+  skipBtn.style.display = 'none';
+  skipBtn.removeEventListener('click', skipBoot);
+  const boot = document.getElementById('boot');
+  boot.style.display = 'none';
+  const moon = document.getElementById('moonGlow');
+  if(moon) moon.classList.remove('show');
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.classList.add('app-poweron');
+  render();
+}
+
+function boot(){
+  bootSkipped = false;
+  const skipBtn = document.getElementById('skipBoot');
+  skipBtn.style.display = 'block';
+  skipBtn.addEventListener('click', skipBoot);
+
+  const flash = document.getElementById('crtFlash');
+  playPowerOn();
+  flash.classList.add('play');
+
+  const boot = document.getElementById('boot');
+  boot.style.display = 'block';
+  boot.innerHTML = '';
+
+  function appendLine(text, extraClass){
+    const d = document.createElement('div');
+    d.className = extraClass ? 'line ' + extraClass : 'line';
+    d.textContent = text;
+    boot.appendChild(d);
+    return d;
+  }
+
+  const postLinesA = [
+    { text: "NADIR TERMINAL BIOS v4.01 \u2014 (C) NADIR INDUSTRIES", delay: 220 }
+  ];
+  const postLinesB = [
+    { text: "ПОДКЛЮЧЕНИЕ К АРХИВНОЙ СИСТЕМЕ...", delay: 500 }
+  ];
+
+  function typeStage(lines, onDone){
+    let i = 0;
+    function next(){
+      if(bootSkipped) return;
+      if(i < lines.length){
+        appendLine(lines[i].text);
+        const d = lines[i].delay;
+        i++;
+        setTimeout(next, d);
+      } else {
+        onDone();
+      }
+    }
+    next();
+  }
+
+  /* memory counter, climbing up in chunks rather than snapping straight to the total */
+  function memoryCheckStep(onDone){
+    const el = appendLine("ПРОВЕРКА ПАМЯТИ: 0K");
+    const target = 2097152;
+    const totalSteps = 22;
+    let step = 0;
+    function tick(){
+      if(bootSkipped) return;
+      step++;
+      const raw = target * (step / totalSteps);
+      const val = step >= totalSteps ? target : Math.round(raw / 1024) * 1024;
+      el.textContent = "ПРОВЕРКА ПАМЯТИ: " + val + "K" + (step >= totalSteps ? " OK" : "");
+      if(step < totalSteps){
+        setTimeout(tick, 45 + Math.random()*55);
+      } else {
+        setTimeout(onDone, 400);
+      }
+    }
+    setTimeout(tick, 150);
+  }
+
+  function spinnerStep(onDone){
+    const el = appendLine("ИНИЦИАЛИЗАЦИЯ СПУТНИКОВОГО КАНАЛА... /");
+    const frames = ['/', '\u2212', '\\', '|'];
+    let elapsed = 0, idx = 0;
+    const step = 120, total = 2000;
+    const timer = setInterval(()=>{
+      if(bootSkipped){ clearInterval(timer); return; }
+      idx = (idx + 1) % frames.length;
+      el.textContent = "ИНИЦИАЛИЗАЦИЯ СПУТНИКОВОГО КАНАЛА... " + frames[idx];
+      elapsed += step;
+      if(elapsed >= total){
+        clearInterval(timer);
+        el.textContent = "ИНИЦИАЛИЗАЦИЯ СПУТНИКОВОГО КАНАЛА... OK";
+        setTimeout(onDone, 350);
+      }
+    }, step);
+  }
+
+  function passwordStep(onDone){
+    const el = appendLine("ВВЕДИТЕ КОД ДОСТУПА: ");
+    setTimeout(()=>{
+      let n = 0;
+      const len = 7;
+      function typeChar(){
+        if(bootSkipped) return;
+        if(n < len){
+          n++;
+          el.textContent = "ВВЕДИТЕ КОД ДОСТУПА: " + '*'.repeat(n);
+          setTimeout(typeChar, 90 + Math.random()*70);
+        } else {
+          setTimeout(()=> blinkLine(el, onDone), 350);
+        }
+      }
+      typeChar();
+    }, 1000);
+  }
+
+  function blinkLine(el, onDone){
+    let n = 0;
+    function step(){
+      if(bootSkipped) return;
+      if(n < 4){
+        el.style.opacity = (n % 2 === 0) ? '0.1' : '1';
+        n++;
+        setTimeout(step, 130);
+      } else {
+        el.style.opacity = '1';
+        onDone();
+      }
+    }
+    step();
+  }
+
+  function dirListingStage(onDone){
+    const shortFiles = [
+      ["COMMAND","COM"], ["FORMAT","COM"], ["CHKDSK","COM"], ["SYS","COM"],
+      ["DEBUG","EXE"], ["LINK","EXE"], ["BASIC","COM"], ["MODE","COM"],
+      ["BACKUP","COM"], ["XCOPY","EXE"], ["ATTRIB","EXE"], ["TREE","COM"],
+      ["SORT","EXE"], ["FIND","EXE"], ["LABEL","COM"], ["SUBST","EXE"]
+    ];
+    const longFiles = [
+      ["CHRONOLOGY","DAT"], ["FACTIONS","DAT"],
+      ["LOCATIONS","DAT"], ["CHARACTERS","DAT"],
+      ["GLOSSARY","DAT"], ["SODOM","SYS"],
+      ["ARCHIVE","EXE"], ["CUSTODY","SYS"]
+    ];
+    const rows = [];
+    for(let r = 0; r < shortFiles.length; r += 4){
+      let line = "";
+      for(let c = 0; c < 4; c++){
+        const f = shortFiles[r + c];
+        line += padCol(f[0], 10) + padCol(f[1], 5);
+      }
+      rows.push(line.trimEnd());
+    }
+    for(let r = 0; r < longFiles.length; r += 2){
+      let line = "";
+      for(let c = 0; c < 2; c++){
+        const f = longFiles[r + c];
+        line += padCol(f[0], 16) + padCol(f[1], 6);
+      }
+      rows.push(line.trimEnd());
+    }
+
+    appendLine("C:\\>DIR /W");
+    setTimeout(()=>{
+      appendLine("--------------------------------------------------------------");
+      let i = 0;
+      function nextRow(){
+        if(bootSkipped) return;
+        if(i < rows.length){
+          appendLine(rows[i], 'dir-listing');
+          i++;
+          setTimeout(nextRow, 90);
+        } else {
+          appendLine("--------------------------------------------------------------");
+          setTimeout(onDone, 500);
+        }
+      }
+      setTimeout(nextRow, 150);
+    }, 350);
+  }
+
+  const ASCII_LOGO = [
+    "███╗   ██╗ █████╗ ██████╗ ██╗██████╗ ",
+    "████╗  ██║██╔══██╗██╔══██╗██║██╔══██╗",
+    "██╔██╗ ██║███████║██║  ██║██║██████╔╝",
+    "██║╚██╗██║██╔══██║██║  ██║██║██╔══██╗",
+    "██║ ╚████║██║  ██║██████╔╝██║██║  ██║",
+    "╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚═╝╚═╝  ╚═╝"
+  ];
+
+  function finalReveal(){
+    if(bootSkipped) return;
+    playStatic();
+    boot.innerHTML = '';
+    const moon = document.getElementById('moonGlow');
+    if(moon) moon.classList.add('show');
+    let i = 0;
+    function nextLogoLine(){
+      if(bootSkipped) return;
+      if(i < ASCII_LOGO.length){
+        appendLine(ASCII_LOGO[i], 'ascii-logo');
+        i++;
+        setTimeout(nextLogoLine, 45);
+      } else {
+        setTimeout(()=>{
+          if(bootSkipped) return;
+          appendLine("");
+          const finalLines = [
+            { text: "ДОБРО ПОЖАЛОВАТЬ, СОТРУДНИК NADIR INDUSTRIES.", delay: 500 },
+            { text: "СИСТЕМА АРХИВА «КУСТОДИЙ» НА СВЯЗИ.", delay: 500 },
+            { text: "ОЖИДАНИЕ КОМАНД...", delay: 300 }
+          ];
+          typeStage(finalLines, ()=>{
+            const cursorLine = appendLine('');
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            cursor.innerHTML = '&nbsp;';
+            cursorLine.appendChild(cursor);
+            const enterArchive = ()=>{
+              if(bootSkipped) return;
+              document.removeEventListener('keydown', enterArchive);
+              boot.removeEventListener('click', enterArchive);
+              document.getElementById('skipBoot').style.display = 'none';
+              if(moon) moon.classList.remove('show');
+              boot.style.display='none';
+              const app = document.getElementById('app');
+              app.style.display='flex';
+              app.classList.add('app-poweron');
+              render();
+            };
+            boot.style.cursor = 'pointer';
+            boot.addEventListener('click', enterArchive, { once:true });
+            document.addEventListener('keydown', enterArchive, { once:true });
+          });
+        }, 300);
+      }
+    }
+    nextLogoLine();
+  }
+
+  setTimeout(()=>{
+    typeStage(postLinesA, ()=>{
+      memoryCheckStep(()=>{
+        typeStage(postLinesB, ()=>{
+          spinnerStep(()=>{
+            appendLine("КАНАЛ УСТАНОВЛЕН. ЗАЩИЩЁННОЕ СОЕДИНЕНИЕ ПОДТВЕРЖДЕНО.");
+            setTimeout(()=>{
+              dirListingStage(()=>{
+                passwordStep(()=>{
+                  appendLine("ДОСТУП ПОДТВЕРЖДЁН.");
+                  setTimeout(finalReveal, 600);
+                });
+              });
+            }, 500);
+          });
+        });
+      });
+    });
+  }, 250);
+}
+
+/* subtle random glitch jitter */
+setInterval(()=>{
+  if(Math.random() > 0.98){
+    const wrap = document.getElementById('app');
+    wrap.style.transform = `translateX(${(Math.random()*2-1).toFixed(2)}px)`;
+    setTimeout(()=>{ wrap.style.transform = 'translateX(0)'; }, 50);
+  }
+}, 100);
+
+/* require one real user gesture first: unlocks audio AND lets the
+   power-on flash + sound fire perfectly in sync instead of being
+   silently blocked by the browser's autoplay policy */
+function enterTerminal(){
+  document.removeEventListener('keydown', enterTerminal);
+  getAudioCtx();
+  document.getElementById('preboot').style.display = 'none';
+  if(musicOn){ setTimeout(startAmbient, 2200); }
+  boot();
+}
+document.getElementById('preboot').addEventListener('click', enterTerminal, { once:true });
+document.addEventListener('keydown', enterTerminal, { once:true });
+</script>
+
+</body>
+</html>

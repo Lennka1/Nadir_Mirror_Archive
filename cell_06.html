@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>...</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500&display=swap">
+<style>
+:root{
+  --void:#070001; --blood:#3b0710; --rust:#7d0f1e; --alarm:#ff2438; --flesh:#f3cfc6;
+  --serif:'EB Garamond','Times New Roman',Georgia,serif;
+  --mono:'JetBrains Mono','Courier New',Courier,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--void);color:var(--flesh);overflow:hidden}
+body{display:grid;place-items:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+
+/* фон: тёмная кровь + пульс сердцебиения */
+.glow{position:fixed;inset:0;z-index:0;opacity:.28;
+  background:radial-gradient(ellipse 70% 60% at 50% 48%,var(--alarm) 0%,var(--blood) 45%,transparent 75%)}
+body.beat .glow{animation:beat 1s ease-out}
+@keyframes beat{0%{opacity:.62}100%{opacity:.28}}
+
+.stage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+  gap:clamp(2.5rem,9vh,5.5rem);padding:0 1.5rem;text-align:center}
+
+/* стих */
+.verse{margin:0;max-width:19em;font:500 clamp(2rem,6vw,4.6rem)/1.2 var(--serif);
+  text-wrap:balance;text-shadow:0 0 26px rgba(255,36,56,.5)}
+.w{display:inline-block;opacity:0;filter:blur(9px);transform:translateY(.15em);
+  animation:word .6s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:calc(1.5s + var(--i)*.17s)}
+@keyframes word{to{opacity:1;filter:blur(0);transform:none}}
+.w.bad{color:var(--alarm);text-shadow:-3px 0 var(--rust),3px 0 var(--alarm)}
+.verse.tear{animation:tear .2s steps(2)}
+@keyframes tear{
+  0%{transform:translateX(-10px);clip-path:inset(0 0 55% 0);text-shadow:-6px 0 var(--rust),6px 0 var(--alarm)}
+  50%{transform:translateX(12px);clip-path:inset(40% 0 0 0)}
+  100%{transform:none;clip-path:inset(0)}}
+
+/* поле кода */
+.code{display:flex;align-items:center;gap:.9rem;width:min(26rem,84vw);padding:.45rem .25rem;
+  border-bottom:1px solid var(--rust);opacity:0;animation:show 1.4s 4s forwards;transition:border-color .2s,box-shadow .2s}
+.code:focus-within{border-color:var(--alarm);box-shadow:0 10px 26px -14px var(--alarm)}
+.code i{font:normal 1.2rem var(--mono);color:var(--rust)}
+.code input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--alarm);caret-color:var(--alarm);
+  font:1.3rem var(--mono);letter-spacing:.35em;text-shadow:0 0 10px rgba(255,36,56,.6)}
+.code input::placeholder{color:var(--blood);letter-spacing:.35em}
+.code.nope{animation:nope .35s steps(4)}
+.code.granted{animation:granted 1.6s ease-out forwards;border-color:#9fe08a}
+.code.granted input{color:#9fe08a;text-shadow:0 0 12px rgba(159,224,138,.7)}
+@keyframes granted{
+  0%{box-shadow:0 0 0 rgba(159,224,138,0)}
+  15%{box-shadow:0 14px 34px -16px rgba(159,224,138,.8)}
+  100%{box-shadow:0 14px 34px -16px rgba(159,224,138,.35)}}
+@keyframes show{to{opacity:1}}
+@keyframes nope{
+  0%{opacity:1;transform:translateX(-8px);border-color:var(--alarm)}
+  50%{opacity:.25;transform:translateX(9px)}
+  100%{opacity:1;transform:none}}
+
+/* слои экрана */
+#nz{position:fixed;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;image-rendering:pixelated;opacity:.4}
+.scan{position:fixed;inset:0;z-index:4;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px)}
+.vig{position:fixed;inset:0;z-index:5;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.9) 100%)}
+
+/* вход: чёрный экран, две красные вспышки, затем стих проступает */
+.veil{position:fixed;inset:0;z-index:20;background:#000;animation:veil 3.2s forwards}
+@keyframes veil{
+  0%,9%{opacity:1;background:#000}
+  10%{background:var(--alarm)} 12%{background:#000}
+  15%{background:var(--alarm);opacity:.85} 17%{background:#000;opacity:1}
+  40%{opacity:1} 100%{opacity:0}}
+
+@media (prefers-reduced-motion:reduce){
+  .veil{animation:none;display:none}
+  .w{filter:none;transform:none;animation-duration:.01s}
+  .verse.tear,.code.nope{animation:none}
+  body.beat .glow{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<main class="stage">
+  <p class="verse" id="verse">Ибо мудрость мира сего есть безумие пред Богом...</p>
+  <div class="code" id="codeBox">
+    <i aria-hidden="true">&gt;</i>
+    <input id="code" type="text" placeholder="___" maxlength="32"
+           autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Код">
+  </div>
+</main>
+<canvas id="nz"></canvas><div class="scan"></div><div class="vig"></div>
+<div class="veil" id="veil"></div>
+
+<script>
+/* ===== КОД ===== */
+const CODE = '453';           // Каин(4) Авель(5) Сиф(3)
+const UNLOCK_URL = 'cell6_dossier.html';
+function normalizeCode(v){ return v.trim().replace(/[\s\-_.,]/g, ''); }
+function onUnlock(){
+  box.classList.add('granted');
+  playGranted();
+  input.disabled = true;
+  setTimeout(()=>{ location.href = UNLOCK_URL; }, 1700);
+}
+function submitCode(v){
+  if(CODE && normalizeCode(v).toLowerCase() === String(CODE).toLowerCase()){ onUnlock(); return true; }
+  return false;
+}
+
+/* ===== стих по словам ===== */
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const verse = document.getElementById('verse');
+verse.innerHTML = verse.textContent.trim().split(/\s+/)
+  .map((w,i)=>`<span class="w" style="--i:${i}">${w}</span>`).join(' ');
+const words = [...verse.querySelectorAll('.w')];
+document.getElementById('veil').addEventListener('animationend',e=>e.target.remove());
+
+/* ===== звук (Web Audio, без файлов) ===== */
+let A=null, master=null, started=false;
+function ctx(){
+  if(!A){
+    const C = window.AudioContext || window.webkitAudioContext; if(!C) return null;
+    A = new C(); master = A.createGain(); master.gain.value = .9; master.connect(A.destination);
+  }
+  return A;
+}
+const on = ()=> A && A.state === 'running';
+function noise(sec){
+  const b=A.createBuffer(1,A.sampleRate*sec,A.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const s=A.createBufferSource(); s.buffer=b; return s;
+}
+function env(g,t,peak,att,end){
+  g.gain.setValueAtTime(.0001,t);
+  g.gain.exponentialRampToValueAtTime(peak,t+att);
+  g.gain.exponentialRampToValueAtTime(.0001,t+end);
+}
+function thump(vol,when){
+  if(!on()) return;
+  const t=A.currentTime+(when||0), o=A.createOscillator(), g=A.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(78,t); o.frequency.exponentialRampToValueAtTime(30,t+.3);
+  env(g,t,vol,.02,.42); o.connect(g); g.connect(master); o.start(t); o.stop(t+.45);
+}
+function tick(){
+  if(!on()) return;
+  const t=A.currentTime, o=A.createOscillator(), g=A.createGain();
+  o.type='square'; o.frequency.setValueAtTime(210,t); o.frequency.exponentialRampToValueAtTime(90,t+.05);
+  env(g,t,.04,.005,.06); o.connect(g); g.connect(master); o.start(t); o.stop(t+.07);
+}
+function refuse(){
+  if(!on()) return;
+  const t=A.currentTime, o=A.createOscillator(), g=A.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(68,t); o.frequency.linearRampToValueAtTime(52,t+.35);
+  env(g,t,.16,.01,.4); o.connect(g); g.connect(master); o.start(t); o.stop(t+.42);
+  const n=noise(.2), ng=A.createGain(); env(ng,t,.08,.005,.18); n.connect(ng); ng.connect(master); n.start(t);
+}
+function playGranted(){
+  if(!on()) return;
+  const t=A.currentTime;
+  [523.3,659.3,784].forEach((f,i)=>{
+    const o=A.createOscillator(), g=A.createGain(); o.type='sine'; o.frequency.value=f;
+    env(g,t+i*.09,.14,.01,.9); o.connect(g); g.connect(master); o.start(t+i*.09); o.stop(t+i*.09+.95);
+  });
+}
+function arrive(){
+  const t=A.currentTime;
+  /* статический удар, уходящий вниз по спектру */
+  const n=noise(1.8), bp=A.createBiquadFilter(), ng=A.createGain();
+  bp.type='bandpass'; bp.Q.value=1.2;
+  bp.frequency.setValueAtTime(6500,t); bp.frequency.exponentialRampToValueAtTime(280,t+1.6);
+  env(ng,t,.35,.04,1.7); n.connect(bp); bp.connect(ng); ng.connect(master); n.start(t);
+  /* суб-удар */
+  const s=A.createOscillator(), sg=A.createGain();
+  s.type='sine'; s.frequency.setValueAtTime(95,t+.1); s.frequency.exponentialRampToValueAtTime(24,t+2.3);
+  env(sg,t+.1,.9,.04,2.4); s.connect(sg); sg.connect(master); s.start(t+.1); s.stop(t+2.6);
+  /* дрон: малая секунда + тритон — не разрешается */
+  const lp=A.createBiquadFilter(), dg=A.createGain();
+  lp.type='lowpass'; lp.frequency.value=420;
+  dg.gain.setValueAtTime(0,t); dg.gain.linearRampToValueAtTime(.12,t+5);
+  lp.connect(dg); dg.connect(master);
+  [55,58.3,82.4,116.5].forEach((f,i)=>{
+    const o=A.createOscillator(), g=A.createGain();
+    o.type = i%2 ? 'sawtooth' : 'triangle'; o.frequency.value=f; g.gain.value=.5/(i+1);
+    o.connect(g); g.connect(lp); o.start(t);
+  });
+  const l=A.createOscillator(), lg=A.createGain();
+  l.frequency.value=.07; lg.gain.value=190; l.connect(lg); lg.connect(lp.frequency); l.start(t);
+}
+function start(){
+  const c=ctx(); if(!c) return;
+  c.resume().then(()=>{ if(!started && c.state==='running'){ started=true; arrive(); } }).catch(()=>{});
+}
+start();  /* если браузер блокирует автозвук — сработает при первом нажатии/касании */
+['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,start,{passive:true}));
+
+/* ===== сердцебиение: пульс фона + звук, учащается со временем ===== */
+let iv = 1900;
+(function beat(){
+  document.body.classList.remove('beat'); void document.body.offsetWidth; document.body.classList.add('beat');
+  thump(.5,0); thump(.3,.24);
+  iv = Math.max(1100, iv-6);
+  setTimeout(beat, iv);
+})();
+
+/* ===== порча слов и разрывы ===== */
+const junk='█▓▒░#%@&§¤';
+function corrupt(){
+  const el = words[Math.floor(Math.random()*words.length)], orig = el.textContent;
+  el.textContent = [...orig].map(()=>junk[Math.floor(Math.random()*junk.length)]).join('');
+  el.classList.add('bad');
+  setTimeout(()=>{ el.textContent = orig; el.classList.remove('bad'); }, 140+Math.random()*160);
+  if(Math.random()<.4){ verse.classList.remove('tear'); void verse.offsetWidth; verse.classList.add('tear'); }
+  setTimeout(corrupt, 2500+Math.random()*4500);
+}
+if(!reduce) setTimeout(corrupt, 5500);
+
+/* ===== шум экрана ===== */
+const cv=document.getElementById('nz'), g2=cv.getContext('2d');
+cv.width=cv.height=160; const im=g2.createImageData(160,160);
+setInterval(()=>{
+  const d=im.data;
+  for(let i=0;i<d.length;i+=4){ const v=Math.random()*255|0; d[i]=v; d[i+1]=v*.08; d[i+2]=v*.12; d[i+3]=Math.random()*70|0; }
+  g2.putImageData(im,0,0);
+}, 90);
+
+/* ===== ввод ===== */
+const input=document.getElementById('code'), box=document.getElementById('codeBox');
+setTimeout(()=>input.focus(), 4000);
+document.addEventListener('pointerdown',()=>setTimeout(()=>input.focus(),0));
+input.addEventListener('keydown',ev=>{
+  if(ev.key==='Enter'){
+    const ok = submitCode(input.value);
+    if(!ok){
+      refuse();
+      box.classList.remove('nope'); void box.offsetWidth; box.classList.add('nope');
+      setTimeout(()=>{ input.value=''; }, 350);
+    }
+  } else if(ev.key.length===1){ tick(); }
+});
+</script>
+</body>
+</html>

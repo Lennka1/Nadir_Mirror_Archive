@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Связывание — NADIR ARCHIVE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cinzel+Decorative:wght@700;900&display=swap">
+<style>
+:root{--gold:#e7c15a;--gold2:#fff2c4;--void:#050302;
+  --sd:'Cinzel Decorative','Cinzel',Georgia,serif; --se:'Cinzel',Georgia,serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--void)}
+body{cursor:default}
+
+/* глубина: тёмный камень, тёплый свет далеко внизу */
+.void{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 70% 55% at 50% 112%,rgba(224,165,46,.16) 0%,transparent 60%),
+             radial-gradient(ellipse 90% 70% at 50% 38%,#17110a 0%,#0a0703 55%,#050302 100%)}
+.grain{position:fixed;inset:0;z-index:1;opacity:.09;pointer-events:none;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='9'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+
+.frame{position:fixed;inset:14px;z-index:3;pointer-events:none;border:1px solid rgba(231,193,90,.28);opacity:0;transition:opacity 2.4s}
+body.lit .frame{opacity:1}
+.frame i{position:absolute;width:20px;height:20px;border:2px solid var(--gold)}
+.frame i.tl{top:-2px;left:-2px;border-right:0;border-bottom:0}
+.frame i.tr{top:-2px;right:-2px;border-left:0;border-bottom:0}
+.frame i.bl{bottom:-2px;left:-2px;border-right:0;border-top:0}
+.frame i.br{bottom:-2px;right:-2px;border-left:0;border-top:0}
+.dossier{position:fixed;top:26px;left:0;right:0;z-index:3;text-align:center;pointer-events:none;
+  font-family:var(--se);font-size:.7rem;letter-spacing:.32em;color:rgba(231,193,90,.55);
+  opacity:0;transition:opacity 2.4s}
+body.lit .dossier{opacity:1}
+
+/* тонкие золотые прожилки-трещины на фоне, будто под камнем что-то теплится */
+svg.veins{position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:0;transition:opacity 3s}
+body.lit svg.veins{opacity:.5}
+.vein{fill:none;stroke:var(--gold);stroke-width:1.1;opacity:.7;stroke-dasharray:1;stroke-dashoffset:1;
+  filter:drop-shadow(0 0 5px rgba(231,193,90,.5));animation:draw 2.6s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* угли/пылинки, поднимающиеся вверх */
+#pt{position:fixed;inset:0;z-index:4;pointer-events:none;mix-blend-mode:screen}
+
+/* текст: одна строка держится в центре, затем медленно гаснет */
+.stage{position:fixed;inset:0;z-index:6;display:grid;place-items:center;padding:0 6vw;text-align:center}
+.ln{grid-area:1/1;font-family:var(--se);font-weight:500;color:var(--gold2);
+  font-size:clamp(1.15rem,3.1vw,1.95rem);line-height:1.5;letter-spacing:.01em;text-wrap:balance;max-width:44rem;
+  text-shadow:0 0 10px rgba(231,193,90,.4),0 0 30px rgba(231,193,90,.15);
+  opacity:0;transform:translateY(10px) scale(1.01);filter:blur(4px);
+  animation:appear 1.6s cubic-bezier(.16,.8,.2,1) forwards}
+.ln.title{font-family:var(--sd);font-weight:900;color:var(--gold);letter-spacing:.14em;
+  font-size:clamp(2.1rem,7vw,4.4rem);text-transform:uppercase}
+.ln.leave{animation:leave 1.4s ease-in forwards}
+
+.redact-wrap{position:relative;display:inline-block;vertical-align:baseline;margin:0 .05em}
+.redact-real{position:relative;white-space:nowrap;color:var(--gold2);
+  text-shadow:0 0 10px rgba(231,193,90,.4),0 0 30px rgba(231,193,90,.15);
+  animation:glitchtext 5.2s steps(1,end) 1 both}
+.redact-bar{position:absolute;inset:-3px -8px;pointer-events:none;
+  background:repeating-linear-gradient(135deg,#050302 0 6px,#120c05 6px 12px);
+  border:1px solid rgba(231,193,90,.4);border-radius:2px;
+  box-shadow:0 0 16px rgba(0,0,0,.7) inset,0 0 8px rgba(231,193,90,.15);
+  animation:glitchbar 5.2s steps(1,end) 1 both}
+@keyframes glitchbar{
+  0%,62%,64%,78%,80.5%,91%,93.5%,100%{opacity:1;transform:translate(0,0)}
+  63%{opacity:.12;transform:translate(-2px,1px)}
+  79%{opacity:.1;transform:translate(2px,-1px)}
+  92%{opacity:0;transform:translate(-1px,0)}
+}
+@keyframes glitchtext{
+  0%,62%,64%,78%,80.5%,91%,93.5%,100%{text-shadow:0 0 10px rgba(231,193,90,.4),0 0 30px rgba(231,193,90,.15)}
+  63%{text-shadow:-2px 0 rgba(255,60,60,.85),2px 0 rgba(80,220,255,.85),0 0 10px rgba(231,193,90,.4)}
+  79%{text-shadow:2px 0 rgba(255,60,60,.85),-2px 0 rgba(80,220,255,.85),0 0 10px rgba(231,193,90,.4)}
+  92%{text-shadow:-1px 0 rgba(255,60,60,.9),1px 0 rgba(80,220,255,.9)}
+}
+@media (prefers-reduced-motion:reduce){
+  .redact-bar,.redact-real{animation:none !important}
+}
+@keyframes appear{0%{opacity:0;transform:translateY(14px) scale(1.02);filter:blur(6px)}
+  60%{opacity:1;filter:blur(0)}100%{opacity:1;transform:none;filter:blur(0)}}
+@keyframes leave{0%{opacity:1;filter:blur(0)}100%{opacity:0;transform:translateY(-10px);filter:blur(5px)}}
+
+.prompt{position:fixed;left:0;right:0;bottom:9%;z-index:6;text-align:center;
+  font-family:var(--se);font-size:.78rem;letter-spacing:.3em;color:var(--gold);
+  opacity:0;pointer-events:none;text-shadow:0 0 8px rgba(231,193,90,.5)}
+.prompt.show{opacity:.75;animation:hintBlink 1.8s ease-in-out infinite;pointer-events:auto;cursor:pointer}
+@keyframes hintBlink{50%{opacity:.25}}
+
+.vig{position:fixed;inset:0;z-index:7;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,#000 100%)}
+.white{position:fixed;inset:0;z-index:15;background:#fff3d0;pointer-events:none;opacity:1;animation:wh 3.4s ease-out forwards}
+@keyframes wh{0%,10%{opacity:.92}100%{opacity:0}}
+.out{position:fixed;inset:0;z-index:20;background:#000;opacity:0;pointer-events:none;transition:opacity 1.8s}
+.out.on{opacity:1}
+
+@media (prefers-reduced-motion:reduce){
+  .ln{animation-duration:.01s}.white{animation-duration:1s}.prompt.show{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="void"></div><div class="grain"></div>
+<div class="frame"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+<div class="dossier">NADIR ARCHIVE · ДОСЬЕ: БЕЗЫМЯННЫЙ · ДОСТУП ОГРАНИЧЕН</div>
+<svg class="veins" id="veins" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice"></svg>
+<canvas id="pt"></canvas>
+<div class="stage" id="stage"></div>
+<div class="prompt" id="prompt">[ НАЖМИТЕ, ЧТОБЫ ВЕРНУТЬСЯ ]</div>
+<div class="vig"></div><div class="white" id="white"></div><div class="out" id="out"></div>
+
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r=>setTimeout(r, ms));
+const RETURN_TO = 'index.html';
+
+/* ===== звук: дальний хор, который медленно опускается вниз по высоте и глохнет ===== */
+let A=null, M=null, choirG=null, padG=null, ready=false; const choir=[];
+function build(){
+  M = A.createGain(); M.gain.value = 1; M.connect(A.destination);
+  const len = A.sampleRate*3, ir = A.createBuffer(2,len,A.sampleRate);
+  for(let c=0;c<2;c++){ const d=ir.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.4); }
+  const rev = A.createConvolver(); rev.buffer = ir; const rg = A.createGain(); rg.gain.value=.55; rev.connect(rg); rg.connect(M);
+
+  choirG = A.createGain(); choirG.gain.value = .14; choirG.connect(M); choirG.connect(rev);
+  [196,246.9,293.7,392,493.9].forEach((f,i)=>{
+    const o=A.createOscillator(), g=A.createGain(); o.type='sine'; o.frequency.value=f*(1+i*.0012);
+    g.gain.value = .5/(i+1); o.connect(g); g.connect(choirG); o.start(); choir.push(o);
+  });
+
+  padG = A.createGain(); padG.gain.value = 0; padG.connect(M); padG.connect(rev);
+  const lp = A.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=180;
+  [49,73.4].forEach(f=>{ const o=A.createOscillator(); o.type='triangle'; o.frequency.value=f; o.connect(lp); o.start(); });
+  lp.connect(padG);
+}
+function boot(){
+  const C = window.AudioContext||window.webkitAudioContext; if(!C) return;
+  if(!A) A = new C();
+  A.resume().then(()=>{ if(!ready && A.state==='running'){ ready=true; build(); } }).catch(()=>{});
+}
+boot();  /* если автозвук заблокирован — включится при первом нажатии/касании */
+['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,boot,{passive:true}));
+
+const T0 = performance.now(); const now = () => (performance.now()-T0)/1000;
+setInterval(()=>{
+  if(!ready) return; const t=now(), n=A.currentTime;
+  const bend = -t*3.4;                                    // хор медленно, тяжело проседает по высоте
+  choir.forEach(o=>o.detune.setTargetAtTime(bend,n,.6));
+  padG.gain.setTargetAtTime(Math.min(.22, t*.01),n,1.2);   // под текстом нарастает низкий гул тяжести
+},200);
+
+/* ===== угли, поднимающиеся вверх, редкие и медленные ===== */
+const cv=document.getElementById('pt'), cx=cv.getContext('2d'); let W=0,H=0; const P=[];
+function rs(){ W=cv.width=innerWidth; H=cv.height=innerHeight; } rs(); addEventListener('resize',rs);
+for(let i=0;i<46;i++) P.push({x:Math.random()*W,y:Math.random()*H,r:.6+Math.random()*1.6,v:.12+Math.random()*.32,ph:Math.random()*6.28});
+if(!reduce) (function draw(){
+  cx.clearRect(0,0,W,H);
+  const t=now(), a=Math.min(1,t/3);
+  P.forEach(p=>{
+    p.y-=p.v; p.x+=Math.sin(t*.4+p.ph)*.25;
+    if(p.y<-6){ p.y=H+6; p.x=Math.random()*W; }
+    cx.fillStyle='rgba(255,214,130,'+(a*(.18+.4*Math.abs(Math.sin(p.ph+t*.5))))+')';
+    cx.beginPath(); cx.arc(p.x,p.y,p.r,0,6.283); cx.fill();
+  });
+  requestAnimationFrame(draw);
+})();
+
+/* ===== прожилки на фоне: несколько случайных, но детерминированных трещин ===== */
+function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const R = mulberry(33);
+const veins = document.getElementById('veins');
+for(let i=0;i<6;i++){
+  let x=100+R()*800, y=100+R()*800, d='M'+x.toFixed(0)+' '+y.toFixed(0);
+  for(let k=0;k<5;k++){ x+=(R()*2-1)*140; y+=(R()*2-1)*140; d+=' L'+x.toFixed(0)+' '+y.toFixed(0); }
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d',d); p.setAttribute('class','vein'); p.setAttribute('pathLength','1');
+  p.style.animationDelay=(i*0.25+2.2)+'s';
+  veins.appendChild(p);
+}
+
+/* ===== текст: строки истории, каждая держится своё время ===== */
+const LINES = [
+  { t:'title', text:'ЖЕРТВА', hold:2600 },
+  { text:'Голгофа. Творения божьи распяли своего Бога.', hold:4200 },
+  { text:'Внизу, среди зевак, стоял человек без имени: то ли солдат, то ли ученик.', hold:5000 },
+  { text:'Когда всё было кончено, мир треснул.', hold:3600 },
+  { text:'Генератор Чудес дал первый сбой.', hold:3800 },
+  { text:'Свою святость он выковал сам, в ту секунду на холме.', hold:4600 },
+  { text:'Он впитал в себя всю боль мироздания и спас целое человечество от уничтожения.', hold:5400 },
+  { text:'Каждый сбой генератора отдавался осколками, которые тот впитывал в своё уставшее, обессиленное тело.', hold:5600 },
+  { text:'И однажды он закрыл глаза, в надежде отдохнуть хоть мгновение.', hold:4800 },
+  { text:'Так прошло почти девятнадцать веков тишины.', hold:4400 },
+  { text:'1916 год. Сомма. Боль наверху выросла настолько, что дотянулась до него даже сквозь сон.', hold:5200 },
+  { text:'Святой пробудился ото сна.', redact:'АДАМ', suffix:'-0', hold:5200 },
+  { t:'title', text:'ДОСЬЕ ЗАКРЫТО', hold:0 }
+];
+
+const stage = document.getElementById('stage');
+let cur = null;
+async function playLines(){
+  await sleep(600);
+  document.body.classList.add('lit');
+  for(const L of LINES){
+    if(L.skip) continue;
+    const el = document.createElement('div');
+    el.className = 'ln' + (L.t==='title' ? ' title' : '');
+    if(L.redact){
+      el.textContent = '';
+      el.append(L.text + ' ');
+      const wrap = document.createElement('span'); wrap.className = 'redact-wrap';
+      const real = document.createElement('span'); real.className = 'redact-real'; real.textContent = L.redact;
+      const bar = document.createElement('span'); bar.className = 'redact-bar'; bar.setAttribute('aria-hidden','true');
+      wrap.append(real, bar);
+      el.append(wrap, L.suffix || '');
+    } else {
+      el.textContent = L.text;
+    }
+    stage.appendChild(el);
+    if(cur){ cur.classList.add('leave'); const dead=cur; setTimeout(()=>dead.remove(), 1500); }
+    cur = el;
+    await sleep(L.hold || 3200);
+  }
+  finish();
+}
+function finish(){
+  const prompt = document.getElementById('prompt');
+  prompt.classList.add('show');
+  const leave = ()=>{
+    prompt.classList.remove('show');
+    document.removeEventListener('keydown', onKey);
+    prompt.removeEventListener('click', leave);
+    document.getElementById('out').classList.add('on');
+    try{ if(ready){ M.gain.cancelScheduledValues(A.currentTime); M.gain.setTargetAtTime(0,A.currentTime,.5); } }catch(e){}
+    setTimeout(()=>{ location.href = RETURN_TO; }, 1500);
+  };
+  function onKey(e){ leave(); }
+  prompt.addEventListener('click', leave);
+  document.addEventListener('keydown', onKey);
+}
+document.getElementById('white').addEventListener('animationend', e=>e.target.remove());
+playLines();
+</script>
+</body>
+</html>

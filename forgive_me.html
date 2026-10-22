@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>...</title>
+<style>
+:root{--ink:#d8d8d8;--mono:'JetBrains Mono','Courier New',Courier,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;font-family:var(--mono)}
+body{padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+body.flash{background:#fff}
+
+/* монолог: строки копятся, старые гаснут */
+.log{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(36rem,86vw);z-index:2}
+.line{font-size:clamp(1.05rem,2.6vw,1.5rem);line-height:2;min-height:2em;
+  transition:opacity 1.2s;word-break:break-word}
+.line.live::after{content:"█";margin-left:.2em;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.log.tremble{animation:trem .09s steps(2) infinite}
+@keyframes trem{0%{transform:translate(-50%,-50%)}50%{transform:translate(calc(-50% + var(--j,2px)),calc(-50% - 1px))}}
+
+/* петля «Простите» */
+#flood{position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden}
+#flood b{position:absolute;font-weight:400;white-space:nowrap;color:#fff;mix-blend-mode:difference}
+
+/* экран */
+.scan{position:fixed;inset:0;z-index:4;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 1px,transparent 1px 3px)}
+.vig{position:fixed;inset:0;z-index:5;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 35%,#000 100%)}
+.flick{position:fixed;inset:0;z-index:6;pointer-events:none;background:#fff;opacity:0;animation:fl 7s infinite}
+@keyframes fl{0%,91%,100%{opacity:0}92%{opacity:.05}93%{opacity:0}96%{opacity:.03}}
+
+@media (prefers-reduced-motion:reduce){.flick{animation:none}.log.tremble{animation:none}}
+</style>
+</head>
+<body>
+<div class="log" id="log"></div>
+<div id="flood"></div>
+<div class="scan"></div><div class="vig"></div><div class="flick"></div>
+
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd = (a,b) => a + Math.random()*(b-a);
+
+/* ===== звук: тишина, тонкий звон в ушах, гул; к концу нарастает и обрывается ===== */
+let A=null, M=null, TG=null, T=null, NG=null, tickBuf=null, ready=false;
+function build(){
+  M=A.createGain(); M.connect(A.destination);
+  T=A.createOscillator(); T.frequency.value=3150; TG=A.createGain(); TG.gain.value=0; T.connect(TG); TG.connect(M); T.start();
+  [41,43.2].forEach(f=>{ const o=A.createOscillator(), g=A.createGain(); o.frequency.value=f; g.gain.value=.06; o.connect(g); g.connect(M); o.start(); });
+  const b=A.createBuffer(1,A.sampleRate*2,A.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const n=A.createBufferSource(), hp=A.createBiquadFilter(); n.buffer=b; n.loop=true; hp.type='highpass'; hp.frequency.value=1800;
+  NG=A.createGain(); NG.gain.value=0; n.connect(hp); hp.connect(NG); NG.connect(M); n.start();
+  tickBuf=A.createBuffer(1,A.sampleRate*.04,A.sampleRate);
+  const t=tickBuf.getChannelData(0); for(let i=0;i<t.length;i++) t[i]=(Math.random()*2-1)*(1-i/t.length);
+}
+function boot(){
+  const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
+  if(!A) A=new C();
+  A.resume().then(()=>{ if(!ready && A.state==='running'){ ready=true; build(); } }).catch(()=>{});
+}
+boot();  /* если автозвук заблокирован — включится при первом нажатии/касании */
+['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,boot,{passive:true}));
+function setLevel(x){
+  if(!ready) return; const t=A.currentTime;
+  TG.gain.setTargetAtTime(.004+x*.05,t,.15);
+  T.frequency.setTargetAtTime(3150+x*1900,t,.3);
+  NG.gain.setTargetAtTime(x*x*.22,t,.1);
+}
+function key(){
+  if(!ready) return;
+  const s=A.createBufferSource(), lp=A.createBiquadFilter(), g=A.createGain();
+  s.buffer=tickBuf; lp.type='lowpass'; lp.frequency.value=900; g.gain.value=.05;
+  s.connect(lp); lp.connect(g); g.connect(M); s.start();
+}
+function cut(){ if(!ready) return; M.gain.cancelScheduledValues(A.currentTime); M.gain.setValueAtTime(0,A.currentTime); }
+
+/* ===== строки ===== */
+const log=document.getElementById('log'), flood=document.getElementById('flood');
+const lines=[];
+function dim(){ lines.forEach((l,i)=>{ l.style.opacity=Math.max(.16,1-(lines.length-1-i)*.15); }); }
+function newLine(){
+  if(lines.length) lines[lines.length-1].classList.remove('live');
+  const el=document.createElement('div'); el.className='line live'; log.appendChild(el); lines.push(el);
+  if(lines.length>13){ lines.shift().remove(); }
+  dim(); return el;
+}
+async function typeLine(text, speed){
+  const el=newLine();
+  for(const ch of text){ el.textContent+=ch; key(); await sleep(speed*rnd(.6,1.5)); }
+}
+
+/* ===== сценарий ===== */
+const SCRIPT=[
+  ["Мне так жаль",90,1500],
+  ["Я трус",110,1700],
+  ["Я не могу даже присоединиться к вам",85,2000],
+  ["Мои ангелочки",130,2600],
+  ["Я так хочу чтобы я вовсе не появлялся на свет",80,1900],
+  ["Я ничтожество",120,2800],
+  ["Простите меня",150,1900],
+  ["Простите",190,1500]
+];
+
+async function play(){
+  await sleep(2800);                          /* чёрный экран и только звук */
+  for(let i=0;i<SCRIPT.length;i++){
+    setLevel(.04+i*.035);
+    await typeLine(SCRIPT[i][0], SCRIPT[i][1]);
+    await sleep(SCRIPT[i][2]);
+  }
+  loop();
+}
+
+/* «Простите» зацикливается: сначала строками, потом заливает весь экран */
+function loop(){
+  const t0=performance.now(), DUR=10000;
+  if(!reduce) log.classList.add('tremble');
+  (function step(){
+    const p=(performance.now()-t0)/DUR;
+    if(p>=1) return crash();
+    setLevel(.3+p*.7); key();
+    log.style.setProperty('--j', (2+p*14)+'px');
+    if(p<.45){
+      const el=newLine(); el.textContent='Простите';
+    } else {
+      const n=1+Math.floor(p*p*8);
+      for(let k=0;k<n;k++){
+        const b=document.createElement('b');
+        b.textContent='Простите';
+        b.style.left=rnd(-5,90)+'vw'; b.style.top=rnd(-3,96)+'vh';
+        b.style.fontSize=rnd(.9,1.6+p*4.5)+'rem';
+        b.style.opacity=rnd(.35,1);
+        if(Math.random()<.3) b.style.transform='rotate('+rnd(-8,8)+'deg)';
+        flood.appendChild(b);
+      }
+      while(flood.children.length>260) flood.firstChild.remove();
+    }
+    setTimeout(step, Math.max(22, 560*Math.pow(1-p,2)));
+  })();
+}
+
+/* обрыв: вспышка, полная тишина, чёрный экран, возврат в терминал */
+function crash(){
+  cut();
+  document.body.classList.add('flash');
+  setTimeout(()=>{
+    document.body.classList.remove('flash');
+    document.body.replaceChildren();
+    document.documentElement.style.background='#000';
+  }, 70);
+  setTimeout(()=>{ location.href='index.html'; }, 2400);
+}
+play();
+</script>
+</body>
+</html>

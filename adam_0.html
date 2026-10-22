@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>...</title>
+<style>
+:root{--void:#040302;--bone:#fff3d0;--gold:#e0a52e}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--void);overflow:hidden}
+body{display:grid;place-items:center}
+
+/* свет за крестом */
+.halo,.pulse{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 42% 56% at 50% 45%,rgba(224,165,46,.6),rgba(120,70,10,.2) 48%,transparent 72%)}
+.halo{opacity:0;animation:fade .6s 4.4s forwards;--to:.55}
+.pulse{opacity:0}
+body.beat .pulse{animation:beat 1.6s ease-out}
+@keyframes fade{to{opacity:var(--to,1)}}
+@keyframes beat{0%{opacity:.7}100%{opacity:0}}
+
+/* лучи */
+.rays{position:fixed;left:50%;top:44%;width:190vmax;height:190vmax;z-index:1;opacity:0;pointer-events:none;
+  background:repeating-conic-gradient(rgba(255,226,160,.11) 0 2deg,transparent 2deg 9deg);
+  -webkit-mask:radial-gradient(circle,#000 0,transparent 36%);mask:radial-gradient(circle,#000 0,transparent 36%);
+  animation:fade 4s 4.4s forwards,spin 160s linear infinite;--to:1}
+@keyframes spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+/* крест: две балки растут из точки пересечения */
+.cross{position:relative;z-index:2;height:min(88vh,147vw);width:auto;overflow:visible;
+  filter:drop-shadow(0 0 22px rgba(255,214,130,.55)) drop-shadow(0 0 90px rgba(224,165,46,.5))}
+.beam{transform-box:view-box;transform-origin:200px 218px;animation:grow 2.6s cubic-bezier(.16,.8,.2,1) forwards}
+.beam.v{transform:scaleY(0);animation-delay:1.7s}
+.beam.h{transform:scaleX(0);animation-delay:2.4s;animation-name:growx}
+@keyframes grow{to{transform:scaleY(1)}}
+@keyframes growx{to{transform:scaleX(1)}}
+.crack{fill:none;stroke:#140b01;stroke-width:2.4;stroke-linejoin:bevel;stroke-dasharray:1;stroke-dashoffset:1;
+  animation:crack 3.2s ease-out forwards;animation-delay:calc(5s + var(--k)*1.3s)}
+@keyframes crack{to{stroke-dashoffset:0}}
+
+/* вспышка в момент, когда крест собран */
+.bloom{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 44%,#fff3d0,rgba(224,165,46,.6) 30%,transparent 65%);animation:bloom 1.8s 4.4s ease-out}
+@keyframes bloom{0%{opacity:.75}100%{opacity:0}}
+
+#pt{position:fixed;inset:0;z-index:3;pointer-events:none;mix-blend-mode:screen}
+.scan{position:fixed;inset:0;z-index:4;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px)}
+.vig{position:fixed;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at center,transparent 38%,#000 100%)}
+.out{position:fixed;inset:0;z-index:20;background:#000;opacity:0;pointer-events:none}
+
+@media (prefers-reduced-motion:reduce){
+  .beam{animation-duration:.01s;animation-delay:0s}
+  .crack{animation-duration:.01s;animation-delay:0s}
+  .halo,.rays{animation:none;opacity:.5}.bloom{display:none}
+  body.beat .pulse{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="halo"></div><div class="pulse"></div><div class="rays"></div>
+
+<svg class="cross" viewBox="0 0 400 640" role="img" aria-label="Крест">
+  <defs>
+    <linearGradient id="gv" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3a2506"/><stop offset=".22" stop-color="#b8801d"/>
+      <stop offset=".5" stop-color="#fff3d0"/><stop offset=".78" stop-color="#b8801d"/><stop offset="1" stop-color="#3a2506"/>
+    </linearGradient>
+    <linearGradient id="gh" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2506"/><stop offset=".22" stop-color="#b8801d"/>
+      <stop offset=".5" stop-color="#fff3d0"/><stop offset=".78" stop-color="#b8801d"/><stop offset="1" stop-color="#3a2506"/>
+    </linearGradient>
+  </defs>
+  <rect class="beam h" x="60" y="190" width="280" height="56" fill="url(#gh)"/>
+  <rect class="beam v" x="172" y="20" width="56" height="600" fill="url(#gv)"/>
+  <path class="crack" style="--k:0" pathLength="1" d="M172 300 L190 322 L184 350 L205 372 L199 410"/>
+  <path class="crack" style="--k:1" pathLength="1" d="M228 120 L210 140 L216 168 L198 190"/>
+  <path class="crack" style="--k:2" pathLength="1" d="M340 205 L300 214 L286 228 L250 226"/>
+  <path class="crack" style="--k:3" pathLength="1" d="M215 470 L196 500 L210 540 L192 590"/>
+  <path class="crack" style="--k:4" pathLength="1" d="M60 232 L96 222 L120 236 L150 226"/>
+</svg>
+
+<div class="bloom"></div><canvas id="pt"></canvas><div class="scan"></div><div class="vig"></div><div class="out" id="out"></div>
+
+<script>
+const T0 = performance.now(), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const now = () => (performance.now()-T0)/1000, rnd = (a,b) => a + Math.random()*(b-a);
+const END = 15000;
+
+/* ===== звук: сакральный дрон в большом пустом зале ===== */
+let A=null, M=null, rev=null, padG=null, padF=null, shG=null, ready=false, hit=false; const oscs=[];
+function build(){
+  M=A.createGain(); M.gain.value=.9; M.connect(A.destination);
+  const len=A.sampleRate*3, ir=A.createBuffer(2,len,A.sampleRate);
+  for(let c=0;c<2;c++){ const d=ir.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6); }
+  rev=A.createConvolver(); rev.buffer=ir; const rg=A.createGain(); rg.gain.value=.9; rev.connect(rg); rg.connect(M);
+  padF=A.createBiquadFilter(); padF.type='lowpass'; padF.frequency.value=220;
+  padG=A.createGain(); padG.gain.value=0; padF.connect(padG); padG.connect(M); padG.connect(rev);
+  [[36.7,'sine',.9],[73.4,'triangle',.5],[110,'triangle',.35],[110.7,'sawtooth',.08],[146.8,'triangle',.28],[220,'sine',.18],[221.3,'triangle',.12]]
+    .forEach(([f,ty,v])=>{ const o=A.createOscillator(), g=A.createGain(); o.type=ty; o.frequency.value=f; g.gain.value=v*.5;
+      o.connect(g); g.connect(padF); o.start(); oscs.push(o); });
+  shG=A.createGain(); shG.gain.value=0; shG.connect(rev);
+  [659.3,987.8,1318.5].forEach((f,i)=>{ const o=A.createOscillator(), g=A.createGain(); o.frequency.value=f*(1+i*.001);
+    g.gain.value=.03/(i+1); o.connect(g); g.connect(shG); o.start(); });
+}
+function boot(){
+  const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
+  if(!A) A=new C();
+  A.resume().then(()=>{ if(!ready && A.state==='running'){ ready=true; build(); } }).catch(()=>{});
+}
+boot();  /* если автозвук заблокирован — включится при первом нажатии/касании */
+['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,boot,{passive:true}));
+
+function thump(v,when){
+  if(!ready) return; const t=A.currentTime+(when||0), o=A.createOscillator(), g=A.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(70,t); o.frequency.exponentialRampToValueAtTime(28,t+.4);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v,t+.03); g.gain.exponentialRampToValueAtTime(.0001,t+.6);
+  o.connect(g); g.connect(M); g.connect(rev); o.start(t); o.stop(t+.65);
+}
+function boom(){
+  const t=A.currentTime, o=A.createOscillator(), g=A.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(64,t); o.frequency.exponentialRampToValueAtTime(24,t+2.4);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.9,t+.05); g.gain.exponentialRampToValueAtTime(.0001,t+2.6);
+  o.connect(g); g.connect(M); g.connect(rev); o.start(t); o.stop(t+2.7);
+}
+/* звук следует за экранным временем, поэтому не «опаздывает», даже если включился позже */
+setInterval(()=>{
+  if(!ready) return; const t=now(), n=A.currentTime;
+  const swell=t<1.5?0:Math.min(1,(t-1.5)/5), fade=t<12.4?1:Math.max(0,1-(t-12.4)/2.4);
+  padG.gain.setTargetAtTime(.34*swell*fade,n,.4);
+  padF.frequency.setTargetAtTime(220+950*swell*fade,n,.6);
+  shG.gain.setTargetAtTime(t>4.5?.7*fade:0,n,.5);
+  const bend=t>12.4?-(t-12.4)*40:0; oscs.forEach(o=>o.detune.setTargetAtTime(bend,n,.3));
+  if(!hit && t>=4.4 && t<7){ hit=true; boom(); }
+},100);
+
+/* ===== сердцебиение под крестом: медленное, тяжёлое; в конце один удар «пропущен» ===== */
+(function beat(){
+  const t=now();
+  if(t>3 && t<12.6){
+    document.body.classList.remove('beat'); void document.body.offsetWidth; document.body.classList.add('beat');
+    thump(.55,0); thump(.28,.3);
+  }
+  setTimeout(beat,2400);
+})();
+
+/* ===== частицы: пепел и искры поднимаются вверх ===== */
+const cv=document.getElementById('pt'), cx=cv.getContext('2d'); let W=0,H=0; const P=[];
+function rs(){ W=cv.width=innerWidth; H=cv.height=innerHeight; } rs(); addEventListener('resize',rs);
+for(let i=0;i<70;i++) P.push({x:rnd(0,W),y:rnd(0,H),r:rnd(.6,2),v:rnd(.2,.6),ph:rnd(0,6.28)});
+if(!reduce) (function draw(){
+  cx.clearRect(0,0,W,H);
+  const t=now(), a=Math.min(1,Math.max(0,(t-3.8)/2))*(t>12.4?Math.max(0,1-(t-12.4)/2):1);
+  P.forEach(p=>{
+    p.y-=p.v; p.x+=Math.sin(t*.6+p.ph)*.3;
+    if(p.y<-6){ p.y=H+6; p.x=rnd(0,W); }
+    cx.fillStyle='rgba(255,214,130,'+(a*(.25+.5*Math.abs(Math.sin(p.ph+t))))+')';
+    cx.beginPath(); cx.arc(p.x,p.y,p.r,0,6.283); cx.fill();
+  });
+  requestAnimationFrame(draw);
+})();
+
+/* ===== финал: питание садится, тьма, возврат в терминал ===== */
+const out=document.getElementById('out');
+setTimeout(()=>{
+  let i=0; const iv=setInterval(()=>{
+    i++; out.style.transition='none'; out.style.opacity=Math.random()<i/18?.85:0;
+    if(i>=18){ clearInterval(iv); out.style.transition='opacity .9s'; out.style.opacity=1; }
+  },90);
+},12400);
+setTimeout(()=>{ location.href='index.html'; }, END);
+</script>
+</body>
+</html>
