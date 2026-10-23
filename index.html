@@ -701,6 +701,24 @@
     .icpt-grid{ grid-template-columns:repeat(var(--gsize),30px); }
   }
 
+  /* ---------- GLITCH & WHITE NOISE ПРИ УСПЕШНОМ ВЗЛОМЕ INTERCEPT ---------- */
+  @keyframes icptGlitchShake{
+    0%  { transform:translate(0,0) skewX(0deg); filter:brightness(1.8) contrast(1.5); }
+    12% { transform:translate(-6px,2px) skewX(-3.5deg); text-shadow:-3px 0 var(--red), 3px 0 var(--green-bright); }
+    24% { transform:translate(6px,-2px) skewX(3deg); filter:brightness(1.35) contrast(1.3); }
+    38% { transform:translate(-4px,-1px) skewX(-1.5deg); text-shadow:3px 0 var(--amber), -3px 0 var(--green-bright); }
+    54% { transform:translate(3px,2px) skewX(2deg); }
+    72% { transform:translate(-2px,1px) skewX(-0.8deg); filter:brightness(1.15); }
+    100%{ transform:translate(0,0) skewX(0deg); filter:none; }
+  }
+  #interceptOverlay.breach-glitch{
+    animation: icptGlitchShake 0.65s steps(2, end) forwards;
+  }
+  .icpt-noise-canvas{
+    position:absolute; inset:0; width:100%; height:100%;
+    pointer-events:none; z-index:25; mix-blend-mode:screen; opacity:0.85;
+  }
+
   /* ---------- РАДИОСКАНЕР ЭФИРА СОДОМА (RADIO) ---------- */
   #radioOverlay{
     display:none; position:fixed; inset: var(--bezel-gap); z-index:82;
@@ -2729,17 +2747,17 @@ function nachtwachterTransition(){
    ========================================================================== */
 const ICPT_NODES = [
   { key:'nachtwachter', name:'NACHTWÄCHTER', ice:'ВЫСОКИЙ', site:'nachtwachter.html',
-    flavor:'ЧВК у внешней стены. Патрульные частоты, цели зачистки, внутренняя переписка.',
+    flavor:'ЧВК у внешней стены. Выписка из закрытого реестра: сведения о структуре и перечень силовых операций.',
     sequences:[
-      { seq:['7A','FF'], reward:'ШИФР-КОД ПАТРУЛЬНОЙ ЧАСТОТЫ' },
-      { seq:['BD','7A','55'], reward:'СПИСОК ЦЕЛЕЙ — ОПЕРАЦИЯ «NACHTJAGD»' }
+      { id:'1', seq:['7A','FF'], reward:'ЧАСТЬ I — ДОСЬЕ КОМПАНИИ И КОНТРАКТЫ (ÜBER DAS UNTERNEHMEN)' },
+      { id:'2', seq:['BD','7A','55'], reward:'ЧАСТЬ II — РЕЕСТР ОПЕРАЦИЙ И ВНУТРЕННИЙ ПОРТАЛ (LEISTUNGEN & ZUGANG)' }
     ]},
   { key:'acheron', name:'ACHERON GRID', ice:'КРИТИЧЕСКИЙ', site:'acheron.html',
-    flavor:'Монополисты тепла и света. Реакторные протоколы, тарифы, засекреченная телеметрия нижних контуров.',
+    flavor:'Монополисты тепла и света. Суточная сводка 74-C: меморандум с тарифами, телеметрия реакторов и журнал вторжений.',
     sequences:[
-      { seq:['E9','1C'], reward:'ПРОТОКОЛ АВАРИЙНОГО ЭНЕРГОРАСПРЕДЕЛЕНИЯ' },
-      { seq:['1C','FF','7A'], reward:'ТЕХНИЧЕСКИЙ ЖУРНАЛ НИЖНЕГО ЭНЕРГОБЛОКА R-0' },
-      { seq:['BD','E9','55','FF'], reward:'ЗАСЕКРЕЧЕННАЯ ПЕРЕПИСКА СОВЕТА ДИРЕКТОРОВ' }
+      { id:'1', seq:['E9','1C'], reward:'РАЗДЕЛ 1–2 — О КОРПОРАЦИИ И ТАРИФНЫЙ ЛИСТ' },
+      { id:'2', seq:['1C','FF','7A'], reward:'РАЗДЕЛ 3 — СОСТОЯНИЕ РЕАКТОРНЫХ КОНТУРОВ (R-0 .. R-5)' },
+      { id:'3', seq:['BD','E9','55','FF'], reward:'РАЗДЕЛ 4 — ОТЧЁТ О ПОПЫТКАХ НЕСАНКЦИОНИРОВАННОГО ДОСТУПА' }
     ]}
 ];
 const ICPT_HEX = ['1C','55','BD','E9','7A','FF'];
@@ -2879,24 +2897,97 @@ function icptEndBreach(reason, success){
   const label = success ? 'ВЗЛОМ ЗАВЕРШЁН: ' + reason : 'СОЕДИНЕНИЕ РАЗОРВАНО: ' + reason;
   let html = '<div class="icpt-label">' + label + '</div>';
   if(got.length){
-    html += '<div class="icpt-label" style="margin-top:10px;">ПЕРЕХВАЧЕНО:</div>';
+    html += '<div class="icpt-label" style="margin-top:10px;">ПЕРЕХВАЧЕНО (' + got.length + ' ИЗ ' + g.sequences.length + ' ФРАГМЕНТОВ):</div>';
     got.forEach(s=> html += '<div class="icpt-result-line ok">✓ ' + s.reward + '</div>');
   }
   if(missed.length){
-    html += '<div class="icpt-label" style="margin-top:10px;">НЕ ПЕРЕХВАЧЕНО (шифр не вскрыт):</div>';
+    html += '<div class="icpt-label" style="margin-top:10px;">ОСТАЛОСЬ ЗАБЛОКИРОВАНО (шифр не вскрыт):</div>';
     missed.forEach(s=> html += '<div class="icpt-result-line miss">✗ ' + s.reward + '</div>');
   }
   if(!got.length) html += '<div class="icpt-result-line fail">ЗАЩИТА ОБНАРУЖИЛА ВТОРЖЕНИЕ РАНЬШЕ, ЧЕМ ВЫ ПОЛУЧИЛИ ДАННЫЕ.</div>';
   if(got.length && g.node.site){
-    html += '<div style="margin-top:14px;"><a href="'+g.node.site+'" target="_blank" rel="noopener" '
+    const unlockedIds = got.map(s => s.id).join(',');
+    const targetUrl = g.node.site + '?sec=' + encodeURIComponent(unlockedIds);
+    html += '<div style="margin-top:14px;"><a href="'+targetUrl+'" target="_blank" rel="noopener" '
       + 'style="display:inline-block;border:1px solid var(--amber);color:var(--amber);padding:8px 14px;'
-      + 'text-decoration:none;font-size:0.8rem;letter-spacing:1px;">ВЫГРУЗИТЬ ДАННЫЕ →</a></div>';
+      + 'text-decoration:none;font-size:0.8rem;letter-spacing:1px;">ВЫГРУЗИТЬ ВСКРЫТЫЕ ФРАГМЕНТЫ ('+got.length+'/'+g.sequences.length+') →</a></div>';
   }
   html += '<div class="icpt-hint" style="margin-top:14px;"><b>INTERCEPT</b> — начать новую сессию взлома. ESC — закрыть модуль.</div>';
   document.getElementById('icptBody').innerHTML = html;
   document.getElementById('icptTimer').textContent = '';
-  if(got.length) playClick(); else playDenied();
+  if(got.length){
+    playClick();
+    triggerIcptBreachGlitch();
+  } else {
+    playDenied();
+  }
   icptGame = null;
+}
+
+function triggerIcptBreachGlitch(){
+  const ov = document.getElementById('interceptOverlay');
+  if(!ov) return;
+  ov.classList.remove('breach-glitch');
+  void ov.offsetWidth;
+  ov.classList.add('breach-glitch');
+
+  // Звуковой импульс белого шума + подтверждение взлома
+  playStatic();
+  try{
+    const c = getAudioCtx(), t = c.currentTime;
+    if(c){
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(520, t);
+      o.frequency.setValueAtTime(880, t + 0.08);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.06, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+      o.connect(g); g.connect(c.destination);
+      o.start(t); o.stop(t + 0.3);
+    }
+  }catch(e){}
+
+  // Canvas-анимация «белого шума» и полос синхронизации поверх окна взлома
+  const cvs = document.createElement('canvas');
+  cvs.className = 'icpt-noise-canvas';
+  cvs.width = 360;
+  cvs.height = 220;
+  ov.appendChild(cvs);
+  const ctx = cvs.getContext('2d');
+  const start = performance.now();
+  const duration = 640;
+
+  function drawNoise(now){
+    const elapsed = now - start;
+    if(elapsed >= duration){
+      cvs.remove();
+      ov.classList.remove('breach-glitch');
+      return;
+    }
+    const progress = elapsed / duration;
+    const fade = 1 - progress;
+    const img = ctx.createImageData(cvs.width, cvs.height);
+    const d = img.data;
+    for(let i = 0; i < d.length; i += 4){
+      const v = Math.random() < 0.55 * fade ? (150 + Math.random() * 105) : 0;
+      d[i]     = v * 0.45; // R
+      d[i + 1] = v;        // G (фосфорный оттенок белого шума)
+      d[i + 2] = v * 0.55; // B
+      d[i + 3] = v ? Math.floor(175 * fade) : 0;
+    }
+    ctx.putImageData(img, 0, 0);
+
+    // Горизонтальные полосы срыва развёртки (glitch-bars)
+    ctx.fillStyle = `rgba(224, 165, 46, ${0.28 * fade})`;
+    for(let b = 0; b < 3; b++){
+      const y = Math.floor(Math.random() * cvs.height);
+      const h = 2 + Math.floor(Math.random() * 14);
+      ctx.fillRect(0, y, cvs.width, h);
+    }
+    requestAnimationFrame(drawNoise);
+  }
+  requestAnimationFrame(drawNoise);
 }
 
 /* ==========================================================================
