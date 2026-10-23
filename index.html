@@ -879,6 +879,225 @@
   }
   #cmdHint.show{ display:block; }
 
+  /* ---------- ТУМБЛЕР ЦВЕТА ЛЮМИНОФОРА (P3 ЯНТАРНЫЙ РЕЖИМ) ---------- */
+  body.phosphor-amber{
+    --bg: #0b0803;
+    --bg-panel: #120d05;
+    --green: #ffb000;
+    --green-dim: #9c6a14;
+    --green-bright: #ffe299;
+    --amber: #ffd166;
+    --line: #4a3208;
+  }
+  body.phosphor-amber .wrap{
+    text-shadow: 0 0 2px rgba(255,176,0,0.42);
+  }
+  body.phosphor-amber .crt-flicker{
+    background: rgba(255,176,0,0.014);
+  }
+  body.phosphor-amber .crt-rim{
+    box-shadow:
+      inset 0 0 0 1px rgba(255,215,130,0.12),
+      inset 0 0 22px rgba(255,176,0,0.07);
+  }
+  body.phosphor-amber #crtFlash{
+    background: #fff0c2;
+  }
+  body.phosphor-amber #moonGlow{
+    text-shadow: 0 0 8px rgba(255,200,110,0.85), 0 0 22px rgba(255,176,0,0.4);
+  }
+  body.phosphor-amber nav{
+    background: rgba(255,176,0,0.015);
+  }
+  body.phosphor-amber nav .cat:hover{
+    background: rgba(255,176,0,0.1);
+  }
+  body.phosphor-amber .search-box{
+    background: rgba(255,176,0,0.03);
+  }
+  body.phosphor-amber .entry-card:hover{
+    background: rgba(255,176,0,0.07);
+  }
+  body.phosphor-amber .cmd-bar{
+    background: rgba(255,176,0,0.02);
+  }
+  .footer-controls{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .standby-status{
+    cursor:pointer; transition:color 0.2s, text-shadow 0.2s;
+  }
+  .standby-status:hover{
+    color:var(--amber); text-shadow:0 0 6px var(--amber);
+  }
+
+  /* ---------- ЛИЧНЫЙ ЖУРНАЛ УЛИК И РАПОРТОВ (NOTES) ---------- */
+  .journal-intro{
+    font-size:0.8rem; color:var(--green-dim); margin-bottom:16px; padding-bottom:10px;
+    border-bottom:1px dashed var(--line); line-height:1.5;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+  }
+  .journal-actions{
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .journal-btn{
+    background:transparent; border:1px solid var(--green-dim); color:var(--green);
+    font-family:inherit; font-size:0.74rem; letter-spacing:1px; padding:6px 12px; cursor:pointer;
+    transition:all 0.15s;
+  }
+  .journal-btn:hover{
+    border-color:var(--green); background:rgba(43,232,115,0.08); box-shadow:var(--glow);
+  }
+  .journal-btn.primary{
+    border-color:var(--amber); color:var(--amber);
+  }
+  .journal-btn.primary:hover{
+    background:var(--amber); color:var(--bg); box-shadow:0 0 8px var(--amber);
+  }
+  .journal-btn.danger:hover{
+    border-color:var(--red); color:var(--red); background:rgba(212,50,74,0.1); box-shadow:0 0 8px var(--red);
+  }
+  .journal-form{
+    border:1px solid var(--green); border-left:3px solid var(--amber);
+    background:var(--bg-panel); padding:16px 18px; margin-bottom:18px;
+  }
+  .journal-form-title{
+    color:var(--amber); font-size:0.78rem; letter-spacing:1px; font-weight:700; margin-bottom:12px;
+  }
+  .journal-form-row{
+    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;
+  }
+  .journal-input, .journal-select, .journal-textarea{
+    background:#050705; border:1px solid var(--green-dim); color:var(--green-bright);
+    font-family:inherit; font-size:0.84rem; padding:8px 11px; outline:none;
+  }
+  body.phosphor-amber .journal-input,
+  body.phosphor-amber .journal-select,
+  body.phosphor-amber .journal-textarea{
+    background:#080602;
+  }
+  .journal-input:focus, .journal-select:focus, .journal-textarea:focus{
+    border-color:var(--amber); box-shadow:0 0 6px rgba(224,165,46,0.35);
+  }
+  .journal-input::placeholder, .journal-textarea::placeholder{
+    color:var(--green-dim); opacity:0.75;
+  }
+  .journal-textarea{
+    width:100%; min-height:96px; resize:vertical; line-height:1.55; margin-bottom:10px;
+  }
+  .journal-filter-bar{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    margin-bottom:14px;
+  }
+  .journal-cats{
+    display:flex; gap:6px; flex-wrap:wrap;
+  }
+  .journal-cat-btn{
+    background:transparent; border:1px solid var(--line); color:var(--green-dim);
+    font-family:inherit; font-size:0.7rem; letter-spacing:1px; padding:4px 9px; cursor:pointer;
+    transition:all 0.15s;
+  }
+  .journal-cat-btn:hover{
+    border-color:var(--green-dim); color:var(--green);
+  }
+  .journal-cat-btn.active{
+    border-color:var(--amber); color:var(--bg); background:var(--amber); font-weight:700;
+  }
+  .journal-list{
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .journal-card{
+    border:1px solid var(--green-dim); border-left:3px solid var(--green);
+    background:var(--bg-panel); padding:14px 16px; transition:border-color 0.15s;
+  }
+  .journal-card:hover{
+    border-color:var(--green);
+  }
+  .journal-card-top{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
+    margin-bottom:6px;
+  }
+  .journal-tag{
+    display:inline-block; padding:2px 7px; border:1px solid var(--amber); color:var(--amber);
+    font-size:0.68rem; letter-spacing:1px; font-weight:700;
+  }
+  .journal-session{
+    color:var(--green-dim); font-size:0.74rem; letter-spacing:0.8px; margin-left:8px;
+  }
+  .journal-card h3{
+    margin:4px 0 8px 0; color:var(--green-bright); font-size:1rem; letter-spacing:0.4px;
+    overflow-wrap:break-word;
+  }
+  .journal-card-body{
+    color:var(--green); font-size:0.88rem; line-height:1.65; white-space:pre-wrap; overflow-wrap:break-word;
+  }
+
+  /* ---------- РЕЖИМ ОЖИДАНИЯ ТЕРМИНАЛА С ПОМЕХАМИ (STANDBY) ---------- */
+  #standbyOverlay{
+    display:none; position:fixed; inset: var(--bezel-gap); z-index:90;
+    border-radius: var(--screen-radius); overflow:hidden;
+    background: rgba(3, 5, 4, 0.94);
+    color: var(--green-dim);
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    user-select: none;
+  }
+  body.phosphor-amber #standbyOverlay{
+    background: rgba(7, 5, 2, 0.94);
+  }
+  #standbyOverlay.show{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  #standbyCanvas{
+    position:absolute; inset:0; width:100%; height:100%;
+    pointer-events:none; opacity:0.65; mix-blend-mode:screen;
+  }
+  .standby-scanbar{
+    position:absolute; left:0; right:0; height:90px;
+    background: linear-gradient(to bottom, transparent, rgba(43,232,115,0.06), transparent);
+    pointer-events:none;
+    animation: standbyScan 6.5s linear infinite;
+  }
+  body.phosphor-amber .standby-scanbar{
+    background: linear-gradient(to bottom, transparent, rgba(255,176,0,0.07), transparent);
+  }
+  @keyframes standbyScan{
+    0%  { top:-100px; }
+    100%{ top:100%; }
+  }
+  .standby-box{
+    position:relative; z-index:2;
+    border:1px dashed var(--green-dim);
+    background: rgba(8, 10, 8, 0.85);
+    padding: 22px 32px;
+    text-align:center;
+    max-width: 520px;
+    box-shadow: 0 0 28px rgba(0,0,0,0.85);
+    animation: standbyFloat 5s ease-in-out infinite;
+  }
+  body.phosphor-amber .standby-box{
+    background: rgba(12, 9, 4, 0.88);
+  }
+  @keyframes standbyFloat{
+    0%,100%{ transform: translateY(0px); }
+    50%    { transform: translateY(-6px); }
+  }
+  .standby-box.glitch-jerk{
+    transform: translate(-5px, 2px) skewX(-3deg) !important;
+    border-color: var(--amber);
+  }
+  .standby-title{
+    font-family:'VT323', monospace; font-size:2rem; letter-spacing:3px;
+    color: var(--green); text-shadow: var(--glow); margin-bottom:6px;
+  }
+  .standby-sub{
+    font-size:0.75rem; color:var(--amber); letter-spacing:1.5px; margin-bottom:14px;
+  }
+  .standby-hint{
+    font-size:0.72rem; color:var(--green-dim); letter-spacing:1px;
+    animation: blinkHint 1.6s step-end infinite;
+  }
+
   /* ---------- mobile layout ---------- */
   @media (max-width: 720px){
     :root{ font-size: 15px; --bezel-gap: 10px; --screen-radius: 22px; }
@@ -991,13 +1210,26 @@
   </div>
 
   <footer id="footerBar">
-    <span class="footer-normal" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+    <span class="footer-normal" style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:6px;">
       <span id="footer-left">SODOM CIVIC ARCHIVE MIRROR <span id="progressCounter" class="progress-counter">· ИЗУЧЕНО: 0/0</span></span>
-      <button id="soundToggle" class="sound-toggle">♪ САУНДТРЕК: OFF</button>
-      <span>СИСТЕМА ОНЛАЙН</span>
+      <span class="footer-controls">
+        <button id="phosphorToggle" class="sound-toggle" title="Переключить люминофор ЭЛТ-монитора (P1 Зелёный / P3 Янтарный)">◉ ЛЮМИНОФОР: P1 ЗЕЛЁНЫЙ</button>
+        <button id="soundToggle" class="sound-toggle">♪ САУНДТРЕК: OFF</button>
+      </span>
+      <span id="standbyTrigger" class="standby-status" title="Нажмите для перевода терминала в режим ожидания (STANDBY)">СИСТЕМА ОНЛАЙН</span>
     </span>
     <div id="footerAlert" class="footer-alert"></div>
   </footer>
+</div>
+
+<div id="standbyOverlay">
+  <canvas id="standbyCanvas" width="420" height="260"></canvas>
+  <div class="standby-scanbar"></div>
+  <div id="standbyBox" class="standby-box">
+    <div class="standby-title">NADIR // РЕЖИМ ОЖИДАНИЯ</div>
+    <div class="standby-sub">ДЕЖУРНЫЙ НАКАЛ ЭЛТ · КАНАЛ СВЯЗИ УДЕРЖИВАЕТСЯ</div>
+    <div class="standby-hint">[ ДВИНЬТЕ МЫШЬ ИЛИ НАЖМИТЕ ЛЮБУЮ КЛАВИШУ ]</div>
+  </div>
 </div>
 
 <div id="interceptOverlay">
@@ -1675,6 +1907,8 @@ function renderNav(){
   const inboxActive = state.view === 'inbox' ? 'active' : '';
   const unreadBadge = unread > 0 ? `<span class="badge-unread">[НОВЫХ: ${unread}]</span>` : `<span class="count">[${getAllInboxMessages().length}]</span>`;
   html += `<button id="inboxNavBtn" class="cat mod-btn ${inboxActive}">📨 СВОДКИ ЯЧЕЙКИ-7 ${unreadBadge}</button>`;
+  const notesActive = state.view === 'journal' ? 'active' : '';
+  html += `<button id="journalNavBtn" class="cat mod-btn ${notesActive}">📓 ЛИЧНЫЙ ЖУРНАЛ <span class="count">[${loadJournalNotes().length}]</span></button>`;
   html += `<button id="radioNavBtn" class="cat mod-btn">📡 РАДИОСКАНЕР ЭФИРА <span class="count">[RF]</span></button>`;
   nav.innerHTML = html;
   document.getElementById('randomBtn').addEventListener('click', ()=>{
@@ -1695,6 +1929,10 @@ function renderNav(){
   document.getElementById('inboxNavBtn').addEventListener('click', ()=>{
     playClick();
     state.view='inbox'; render(true); closeNav();
+  });
+  document.getElementById('journalNavBtn').addEventListener('click', ()=>{
+    playClick();
+    state.view='journal'; render(true); closeNav();
   });
   document.getElementById('radioNavBtn').addEventListener('click', ()=>{
     playClick();
@@ -1957,11 +2195,305 @@ function renderInbox(){
   });
 }
 
+/* ---------- ЛИЧНЫЙ ЖУРНАЛ УЛИК И РАПОРТОВ (NOTES / JOURNAL) ---------- */
+const JOURNAL_KEY = "nadir_player_journal_v1";
+const JOURNAL_CATEGORIES = ["УЛИКА", "РАПОРТ", "ПЕРСОНА", "СЕКТОР", "ПРОЧЕЕ"];
+let journalState = {
+  filterCat: "ВСЕ",
+  search: "",
+  editingId: null,
+  showForm: false
+};
+
+function loadJournalNotes(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(JOURNAL_KEY) || "[]");
+    return Array.isArray(raw) ? raw : [];
+  }catch(e){ return []; }
+}
+function saveJournalNotes(notes){
+  try{ localStorage.setItem(JOURNAL_KEY, JSON.stringify(notes)); }catch(e){}
+}
+function escapeHtml(str){
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderJournal(){
+  const main = document.getElementById('main');
+  const notes = loadJournalNotes();
+  const editingNote = journalState.editingId ? notes.find(n => n.id === journalState.editingId) : null;
+  const formVisible = journalState.showForm || Boolean(editingNote);
+
+  const filtered = notes.filter(n => {
+    if(journalState.filterCat !== "ВСЕ" && n.category !== journalState.filterCat) return false;
+    if(journalState.search.trim()){
+      const q = journalState.search.trim().toLowerCase();
+      const hay = ((n.title || '') + ' ' + (n.session || '') + ' ' + (n.body || '')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  let html = `<div class="list-title">ЛИЧНЫЙ ЖУРНАЛ УЛИК И РАПОРТОВ<span class="cursor">&nbsp;</span></div>`;
+  html += `<div class="journal-intro">
+    <span>Полевой журнал оперативника Ячейки-7 для записи улик, зацепок, имён и рапортов по ходу сессий. Все записи хранятся локально в вашем терминале.</span>
+    <div class="journal-actions">
+      <button id="jNewBtn" class="journal-btn primary">${formVisible ? '✕ СКРЫТЬ ФОРМУ' : '+ НОВАЯ ЗАПИСЬ'}</button>
+      <button id="jExportBtn" class="journal-btn" title="Скачать все записи файлом .json">↓ ЭКСПОРТ</button>
+      <button id="jImportBtn" class="journal-btn" title="Загрузить записи из файла .json">↑ ИМПОРТ</button>
+      <input id="jImportFile" type="file" accept=".json,application/json" style="display:none;">
+    </div>
+  </div>`;
+
+  if(formVisible){
+    const curCat = editingNote ? editingNote.category : "УЛИКА";
+    const curTitle = editingNote ? editingNote.title : "";
+    const curSession = editingNote ? (editingNote.session || "") : "";
+    const curBody = editingNote ? editingNote.body : "";
+    html += `<div class="journal-form">
+      <div class="journal-form-title">${editingNote ? 'РЕДАКТИРОВАНИЕ ЗАПИСИ В ЖУРНАЛЕ' : 'НОВАЯ ЗАПИСЬ В ПОЛЕВОМ ЖУРНАЛЕ'}</div>
+      <div class="journal-form-row">
+        <input id="jTitleInput" class="journal-input" style="flex:2;min-width:210px;" placeholder="Заголовок (напр., Зацепка по сектору 4)..." value="${escapeHtml(curTitle)}" autocomplete="off">
+        <select id="jCatSelect" class="journal-select" style="min-width:140px;">
+          ${JOURNAL_CATEGORIES.map(c => `<option value="${c}" ${c === curCat ? 'selected' : ''}>${c}</option>`).join('')}
+        </select>
+        <input id="jSessionInput" class="journal-input" style="flex:1;min-width:140px;" placeholder="Сессия / Сектор (необяз.)" value="${escapeHtml(curSession)}" autocomplete="off">
+      </div>
+      <textarea id="jBodyInput" class="journal-textarea" placeholder="Введите текст рапорта, описание улики или заметки с сессии...">${escapeHtml(curBody)}</textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        ${editingNote ? `<button id="jCancelEditBtn" class="journal-btn">ОТМЕНА</button>` : ''}
+        <button id="jSaveBtn" class="journal-btn primary">${editingNote ? '✓ СОХРАНИТЬ ИЗМЕНЕНИЯ' : '✓ ЗАПИСАТЬ В ЖУРНАЛ'}</button>
+      </div>
+    </div>`;
+  }
+
+  const allCats = ["ВСЕ", ...JOURNAL_CATEGORIES];
+  html += `<div class="journal-filter-bar">
+    <div class="journal-cats">
+      ${allCats.map(c => `<button class="journal-cat-btn ${journalState.filterCat === c ? 'active' : ''}" data-jcat="${c}">${c}</button>`).join('')}
+    </div>
+    <input id="jSearchInput" class="journal-input" style="min-width:220px;padding:5px 10px;font-size:0.78rem;" placeholder="Поиск по записям..." value="${escapeHtml(journalState.search)}">
+  </div>`;
+
+  if(filtered.length === 0){
+    html += `<div class="empty-note">${notes.length === 0
+      ? 'ЖУРНАЛ ПУСТ. Нажмите «+ НОВАЯ ЗАПИСЬ», чтобы зафиксировать первую улику или рапорт с сессии.'
+      : 'По выбранному фильтру записей не найдено.'}</div>`;
+  } else {
+    html += `<div class="journal-list">`;
+    filtered.forEach(n => {
+      html += `<div class="journal-card" data-jid="${n.id}">
+        <div class="journal-card-top">
+          <div>
+            <span class="journal-tag">${escapeHtml(n.category || 'ЗАМЕТКА')}</span>
+            ${n.session ? `<span class="journal-session">// ${escapeHtml(n.session)}</span>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="journal-btn" data-jedit="${n.id}" style="padding:3px 8px;font-size:0.68rem;">ИЗМЕНИТЬ</button>
+            <button class="journal-btn danger" data-jdel="${n.id}" style="padding:3px 8px;font-size:0.68rem;">УДАЛИТЬ</button>
+          </div>
+        </div>
+        <h3>${escapeHtml(n.title)}</h3>
+        <div class="journal-card-body">${escapeHtml(n.body)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  main.innerHTML = html;
+
+  const newBtn = document.getElementById('jNewBtn');
+  if(newBtn){
+    newBtn.addEventListener('click', ()=>{
+      playClick();
+      if(journalState.showForm || journalState.editingId){
+        journalState.showForm = false;
+        journalState.editingId = null;
+      } else {
+        journalState.showForm = true;
+        journalState.editingId = null;
+      }
+      renderJournal();
+    });
+  }
+
+  const cancelBtn = document.getElementById('jCancelEditBtn');
+  if(cancelBtn){
+    cancelBtn.addEventListener('click', ()=>{
+      playClick();
+      journalState.editingId = null;
+      journalState.showForm = false;
+      renderJournal();
+    });
+  }
+
+  const saveBtn = document.getElementById('jSaveBtn');
+  if(saveBtn){
+    saveBtn.addEventListener('click', ()=>{
+      const titleEl = document.getElementById('jTitleInput');
+      const catEl = document.getElementById('jCatSelect');
+      const sesEl = document.getElementById('jSessionInput');
+      const bodyEl = document.getElementById('jBodyInput');
+      const title = (titleEl.value || '').trim();
+      const body = (bodyEl.value || '').trim();
+      const category = catEl.value || 'УЛИКА';
+      const session = (sesEl.value || '').trim();
+      if(!title && !body){
+        playDenied();
+        flashFooterAlert("ЗАПОЛНИТЕ ЗАГОЛОВОК ИЛИ ТЕКСТ ЗАПИСИ", 2400);
+        return;
+      }
+      const list = loadJournalNotes();
+      if(journalState.editingId){
+        const idx = list.findIndex(item => item.id === journalState.editingId);
+        if(idx !== -1){
+          list[idx] = { ...list[idx], title: title || 'БЕЗ ЗАГОЛОВКА', category, session, body };
+        }
+        flashFooterAlert("ЗАПИСЬ В ЖУРНАЛЕ ОБНОВЛЕНА", 2000);
+      } else {
+        list.unshift({
+          id: 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          title: title || 'БЕЗ ЗАГОЛОВКА',
+          category,
+          session,
+          body
+        });
+        flashFooterAlert("ЗАПИСЬ ЗАНЕСЕНА В ЛИЧНЫЙ ЖУРНАЛ", 2000);
+      }
+      saveJournalNotes(list);
+      playClick();
+      journalState.editingId = null;
+      journalState.showForm = false;
+      renderNav();
+      renderJournal();
+    });
+  }
+
+  main.querySelectorAll('[data-jcat]').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      playClick();
+      journalState.filterCat = btn.dataset.jcat;
+      renderJournal();
+    });
+  });
+
+  const searchEl = document.getElementById('jSearchInput');
+  if(searchEl){
+    searchEl.addEventListener('input', (ev)=>{
+      journalState.search = ev.target.value;
+      renderJournal();
+      const reFocused = document.getElementById('jSearchInput');
+      if(reFocused){
+        reFocused.focus();
+        reFocused.setSelectionRange(reFocused.value.length, reFocused.value.length);
+      }
+    });
+  }
+
+  main.querySelectorAll('[data-jedit]').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      playClick();
+      journalState.editingId = btn.dataset.jedit;
+      journalState.showForm = true;
+      renderJournal();
+      document.getElementById('main').scrollTop = 0;
+    });
+  });
+
+  main.querySelectorAll('[data-jdel]').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      playClick();
+      const id = btn.dataset.jdel;
+      const list = loadJournalNotes().filter(item => item.id !== id);
+      saveJournalNotes(list);
+      if(journalState.editingId === id){
+        journalState.editingId = null;
+        journalState.showForm = false;
+      }
+      flashFooterAlert("ЗАПИСЬ УДАЛЕНА ИЗ ЖУРНАЛА", 1800);
+      renderNav();
+      renderJournal();
+    });
+  });
+
+  const exportBtn = document.getElementById('jExportBtn');
+  if(exportBtn){
+    exportBtn.addEventListener('click', ()=>{
+      const list = loadJournalNotes();
+      if(!list.length){
+        playDenied();
+        flashFooterAlert("ЖУРНАЛ ПУСТ — НЕЧЕГО ЭКСПОРТИРОВАТЬ", 2200);
+        return;
+      }
+      playClick();
+      const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'nadir-journal-cell7.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      flashFooterAlert("ЖУРНАЛ ВЫГРУЖЕН В ФАЙЛ NADIR-JOURNAL-CELL7.JSON", 2600);
+    });
+  }
+
+  const importBtn = document.getElementById('jImportBtn');
+  const importFile = document.getElementById('jImportFile');
+  if(importBtn && importFile){
+    importBtn.addEventListener('click', ()=>{ playClick(); importFile.click(); });
+    importFile.addEventListener('change', (ev)=>{
+      const file = ev.target.files && ev.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{
+          const imported = JSON.parse(String(reader.result || '[]'));
+          if(!Array.isArray(imported)) throw new Error('Invalid format');
+          const existing = loadJournalNotes();
+          const existingIds = new Set(existing.map(x => x.id));
+          let added = 0;
+          imported.forEach(item => {
+            if(item && (item.title || item.body)){
+              const id = (item.id && !existingIds.has(item.id))
+                ? item.id
+                : ('note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+              existing.unshift({
+                id,
+                title: String(item.title || 'БЕЗ ЗАГОЛОВКА'),
+                category: JOURNAL_CATEGORIES.includes(item.category) ? item.category : 'УЛИКА',
+                session: String(item.session || ''),
+                body: String(item.body || '')
+              });
+              existingIds.add(id);
+              added++;
+            }
+          });
+          saveJournalNotes(existing);
+          playClick();
+          renderNav();
+          renderJournal();
+          flashFooterAlert("ИМПОРТИРОВАНО ЗАПИСЕЙ В ЖУРНАЛ: " + added, 2800);
+        }catch(err){
+          playDenied();
+          flashFooterAlert("ОШИБКА ЧТЕНИЯ ФАЙЛА ЖУРНАЛА (.JSON)", 2800);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+}
+
 const CORRUPTION = { chronology: 2, factions: 1, locations: 1, characters: 3, glossary: 0, cell7: 2 };
 
 function applyCorruption(){
   const app = document.getElementById('app');
-  const lvl = (state.view === 'search' || state.view === 'inbox') ? 1 : (CORRUPTION[state.category] ?? 1);
+  const lvl = (state.view === 'search' || state.view === 'inbox' || state.view === 'journal') ? 1 : (CORRUPTION[state.category] ?? 1);
   app.className = ('wrap ' + app.className.replace(/\bwrap\b/g,'').replace(/\bcorrupt-\d\b/g,'')).trim();
   app.classList.add('corrupt-' + lvl);
 }
@@ -1979,6 +2511,7 @@ function render(glitch){
   else if(state.view==='article') renderArticle();
   else if(state.view==='search') renderSearch();
   else if(state.view==='inbox') renderInbox();
+  else if(state.view==='journal') renderJournal();
   applyCorruption();
   document.getElementById('main').scrollTop = 0;
 }
@@ -3274,9 +3807,14 @@ function startRadioScope(){
       ctx.stroke();
 
       const { station, clarity, proximity, nearest } = findStationAtFreq(radioState.freq);
+      const isAmber = document.body.classList.contains('phosphor-amber');
       ctx.beginPath();
       ctx.lineWidth = 2;
-      ctx.strokeStyle = station ? (clarity > 0.7 ? '#e0a52e' : '#2be873') : (proximity > 0.2 ? '#7ad99b' : '#328a52');
+      if(isAmber){
+        ctx.strokeStyle = station ? (clarity > 0.7 ? '#ffe299' : '#ffb000') : (proximity > 0.2 ? '#d99626' : '#9c6a14');
+      } else {
+        ctx.strokeStyle = station ? (clarity > 0.7 ? '#e0a52e' : '#2be873') : (proximity > 0.2 ? '#7ad99b' : '#328a52');
+      }
       const activeWave = station ? clarity : (proximity * 0.35);
       const toneFactor = (station || nearest) ? ((station || nearest).tone / 95) : 3.2;
       for(let x=0; x<W; x++){
@@ -3310,11 +3848,20 @@ function runCommand(raw){
   const arg = spaceIdx === -1 ? '' : trimmed.slice(spaceIdx + 1).trim();
 
   if(cmd === 'help'){
-    flashFooterAlert("КОМАНДЫ: OPEN, SEARCH, RANDOM, INBOX, RADIO, DECRYPT, INTERCEPT, WHOAMI, CLEAR", 3800);
+    flashFooterAlert("КОМАНДЫ: OPEN, SEARCH, RANDOM, INBOX, NOTES, RADIO, DECRYPT, INTERCEPT, PHOSPHOR, STANDBY, WHOAMI, CLEAR", 4200);
   } else if(cmd === 'inbox' || cmd === 'mail' || cmd === 'сводки'){
     playClick();
     state.view='inbox'; render(true);
     flashFooterAlert("ВХОДЯЩИЕ СВОДКИ И ПРИКАЗЫ КУРАТОРА...", 1800);
+  } else if(cmd === 'notes' || cmd === 'journal' || cmd === 'log' || cmd === 'журнал'){
+    playClick();
+    state.view='journal'; render(true);
+    flashFooterAlert("ОТКРЫТ ЛИЧНЫЙ ЖУРНАЛ УЛИК И РАПОРТОВ...", 1800);
+  } else if(cmd === 'phosphor' || cmd === 'theme' || cmd === 'amber' || cmd === 'green' || cmd === 'люминофор'){
+    const forceMode = cmd === 'amber' ? 'amber' : (cmd === 'green' ? 'green' : undefined);
+    togglePhosphor(forceMode);
+  } else if(cmd === 'standby' || cmd === 'sleep' || cmd === 'ожидание'){
+    enterStandby();
   } else if(cmd === 'radio' || cmd === 'радио'){
     playClick();
     const f = parseFloat(arg);
@@ -3400,7 +3947,7 @@ const cmdHintEl = document.getElementById('cmdHint');
 const cmdHistory = [];
 let cmdHistoryIdx = -1;
 const AUTOCOMPLETE_CMDS = [
-  'help', 'open ', 'search ', 'random', 'inbox', 'radio', 'decrypt ', 'intercept', 'whoami', 'clear'
+  'help', 'open ', 'search ', 'random', 'inbox', 'notes', 'radio', 'decrypt ', 'intercept', 'phosphor', 'standby', 'whoami', 'clear'
 ];
 
 function hideCmdHint(){
@@ -3597,6 +4144,182 @@ document.getElementById('soundToggle').addEventListener('click', ()=>{
   const ctx = getAudioCtx();
   if(ambientOut && ctx) ambientOut.gain.setTargetAtTime(musicOn ? 1 : 0, ctx.currentTime, 0.4);
 });
+
+/* ==========================================================================
+   ТУМБЛЕР ЦВЕТА ЛЮМИНОФОРА ЭЛТ (P1 ЗЕЛЁНЫЙ / P3 ЯНТАРНЫЙ)
+   ========================================================================== */
+const PHOSPHOR_KEY = "nadir_phosphor_mode";
+let phosphorMode = localStorage.getItem(PHOSPHOR_KEY) === 'amber' ? 'amber' : 'green';
+
+function applyPhosphorMode(mode, withFeedback){
+  phosphorMode = mode === 'amber' ? 'amber' : 'green';
+  document.body.classList.toggle('phosphor-amber', phosphorMode === 'amber');
+  try{ localStorage.setItem(PHOSPHOR_KEY, phosphorMode); }catch(e){}
+  const btn = document.getElementById('phosphorToggle');
+  if(btn){
+    btn.textContent = phosphorMode === 'amber' ? '◉ ЛЮМИНОФОР: P3 ЯНТАРНЫЙ' : '◉ ЛЮМИНОФОР: P1 ЗЕЛЁНЫЙ';
+    btn.classList.toggle('on', phosphorMode === 'amber');
+  }
+  if(withFeedback){
+    playClick();
+    playStatic();
+    const app = document.getElementById('app');
+    if(app){
+      app.classList.add('glitch-active');
+      setTimeout(()=> app.classList.remove('glitch-active'), 240);
+    }
+    flashFooterAlert(
+      phosphorMode === 'amber'
+        ? "ЛЮМИНОФОР ЭЛТ ПЕРЕКЛЮЧЁН: P3 ЯНТАРНЫЙ МОНОХРОМ"
+        : "ЛЮМИНОФОР ЭЛТ ПЕРЕКЛЮЧЁН: P1 ЗЕЛЁНЫЙ МОНОХРОМ",
+      2400
+    );
+  }
+}
+function togglePhosphor(forceMode){
+  const next = forceMode ? forceMode : (phosphorMode === 'amber' ? 'green' : 'amber');
+  applyPhosphorMode(next, true);
+}
+applyPhosphorMode(phosphorMode, false);
+
+const phosphorBtn = document.getElementById('phosphorToggle');
+if(phosphorBtn){
+  phosphorBtn.addEventListener('click', ()=> togglePhosphor());
+}
+
+/* ==========================================================================
+   РЕЖИМ ОЖИДАНИЯ ЭЛТ-ТЕРМИНАЛА С ПОМЕХАМИ ПРИ БЕЗДЕЙСТВИИ (STANDBY)
+   ========================================================================== */
+const STANDBY_IDLE_MS = 90000; // 90 секунд бездействия
+let standbyState = {
+  active: false,
+  idleTimer: null,
+  animId: null,
+  lastGlitchAt: 0,
+  openedAt: 0
+};
+
+function resetStandbyTimer(){
+  if(standbyState.active){
+    if(performance.now() - standbyState.openedAt > 350){
+      exitStandby();
+    }
+    return;
+  }
+  if(standbyState.idleTimer) clearTimeout(standbyState.idleTimer);
+  standbyState.idleTimer = setTimeout(()=>{
+    const app = document.getElementById('app');
+    const icptOpen = document.getElementById('interceptOverlay').classList.contains('show');
+    const radioOpen = document.getElementById('radioOverlay').classList.contains('show');
+    if(app && app.style.display !== 'none' && !icptOpen && !radioOpen){
+      enterStandby();
+    } else {
+      resetStandbyTimer();
+    }
+  }, STANDBY_IDLE_MS);
+}
+
+function enterStandby(){
+  if(standbyState.active) return;
+  standbyState.active = true;
+  standbyState.openedAt = performance.now();
+  if(standbyState.idleTimer) clearTimeout(standbyState.idleTimer);
+  const ov = document.getElementById('standbyOverlay');
+  if(!ov) return;
+  ov.classList.add('show');
+  playStatic();
+  startStandbyLoop();
+}
+
+function exitStandby(){
+  if(!standbyState.active) return;
+  standbyState.active = false;
+  if(standbyState.animId){
+    cancelAnimationFrame(standbyState.animId);
+    standbyState.animId = null;
+  }
+  const ov = document.getElementById('standbyOverlay');
+  if(ov) ov.classList.remove('show');
+  playClick();
+  const app = document.getElementById('app');
+  if(app){
+    app.classList.add('glitch-active');
+    setTimeout(()=> app.classList.remove('glitch-active'), 220);
+  }
+  flashFooterAlert("ТЕРМИНАЛ ПРОБУЖДЁН · РАБОЧИЙ СЕАНС АКТИВЕН", 1800);
+  resetStandbyTimer();
+}
+
+function startStandbyLoop(){
+  const cvs = document.getElementById('standbyCanvas');
+  const box = document.getElementById('standbyBox');
+  if(!cvs) return;
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height;
+
+  function frame(now){
+    if(!standbyState.active) return;
+    ctx.clearRect(0, 0, W, H);
+
+    const isAmber = document.body.classList.contains('phosphor-amber');
+    const isBurst = (now - standbyState.lastGlitchAt) > 3400 && Math.random() < 0.08;
+    if(isBurst){
+      standbyState.lastGlitchAt = now;
+      if(box){
+        box.classList.add('glitch-jerk');
+        setTimeout(()=> box.classList.remove('glitch-jerk'), 140);
+      }
+      playStatic();
+    }
+
+    const inBurstWindow = (now - standbyState.lastGlitchAt) < 220;
+    const density = inBurstWindow ? 0.28 : 0.018;
+
+    const img = ctx.createImageData(W, H);
+    const d = img.data;
+    for(let i = 0; i < d.length; i += 4){
+      if(Math.random() < density){
+        const v = 110 + Math.random() * 145;
+        if(isAmber){
+          d[i]     = v;
+          d[i + 1] = v * 0.68;
+          d[i + 2] = v * 0.18;
+        } else {
+          d[i]     = v * 0.35;
+          d[i + 1] = v;
+          d[i + 2] = v * 0.48;
+        }
+        d[i + 3] = inBurstWindow ? 145 : 55;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+
+    if(inBurstWindow){
+      ctx.fillStyle = isAmber ? 'rgba(255, 176, 0, 0.22)' : 'rgba(43, 232, 115, 0.22)';
+      for(let b = 0; b < 3; b++){
+        const y = Math.floor(Math.random() * H);
+        const h = 2 + Math.floor(Math.random() * 12);
+        ctx.fillRect(0, y, W, h);
+      }
+    }
+
+    standbyState.animId = requestAnimationFrame(frame);
+  }
+  standbyState.animId = requestAnimationFrame(frame);
+}
+
+const standbyTrig = document.getElementById('standbyTrigger');
+if(standbyTrig){
+  standbyTrig.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    enterStandby();
+  });
+}
+
+['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel'].forEach(evName => {
+  window.addEventListener(evName, resetStandbyTimer, { passive: true });
+});
+resetStandbyTimer();
 
 /* boot sequence */
 function padCol(str, width){
