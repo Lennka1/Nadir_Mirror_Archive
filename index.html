@@ -1212,10 +1212,7 @@
   <footer id="footerBar">
     <span class="footer-normal" style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:6px;">
       <span id="footer-left">SODOM CIVIC ARCHIVE MIRROR <span id="progressCounter" class="progress-counter">· ИЗУЧЕНО: 0/0</span></span>
-      <span class="footer-controls">
-        <button id="phosphorToggle" class="sound-toggle" title="Переключить люминофор ЭЛТ-монитора (P1 Зелёный / P3 Янтарный)">◉ ЛЮМИНОФОР: P1 ЗЕЛЁНЫЙ</button>
-        <button id="soundToggle" class="sound-toggle">♪ САУНДТРЕК: OFF</button>
-      </span>
+      <button id="soundToggle" class="sound-toggle">♪ САУНДТРЕК: OFF</button>
       <span id="standbyTrigger" class="standby-status" title="Нажмите для перевода терминала в режим ожидания (STANDBY)">СИСТЕМА ОНЛАЙН</span>
     </span>
     <div id="footerAlert" class="footer-alert"></div>
@@ -3857,8 +3854,11 @@ function runCommand(raw){
     playClick();
     state.view='journal'; render(true);
     flashFooterAlert("ОТКРЫТ ЛИЧНЫЙ ЖУРНАЛ УЛИК И РАПОРТОВ...", 1800);
-  } else if(cmd === 'phosphor' || cmd === 'theme' || cmd === 'amber' || cmd === 'green' || cmd === 'люминофор'){
-    const forceMode = cmd === 'amber' ? 'amber' : (cmd === 'green' ? 'green' : undefined);
+  } else if(cmd === 'phosphor' || cmd === 'theme' || cmd === 'amber' || cmd === 'green' || cmd === 'люминофор' || cmd === 'янтарный' || cmd === 'зелёный' || cmd === 'зеленый'){
+    const a = arg.toLowerCase();
+    let forceMode;
+    if(cmd === 'amber' || cmd === 'янтарный' || a === 'amber' || a === 'p3' || a === 'янтарный') forceMode = 'amber';
+    else if(cmd === 'green' || cmd === 'зелёный' || cmd === 'зеленый' || a === 'green' || a === 'p1' || a === 'зелёный' || a === 'зеленый') forceMode = 'green';
     togglePhosphor(forceMode);
   } else if(cmd === 'standby' || cmd === 'sleep' || cmd === 'ожидание'){
     enterStandby();
@@ -4155,11 +4155,6 @@ function applyPhosphorMode(mode, withFeedback){
   phosphorMode = mode === 'amber' ? 'amber' : 'green';
   document.body.classList.toggle('phosphor-amber', phosphorMode === 'amber');
   try{ localStorage.setItem(PHOSPHOR_KEY, phosphorMode); }catch(e){}
-  const btn = document.getElementById('phosphorToggle');
-  if(btn){
-    btn.textContent = phosphorMode === 'amber' ? '◉ ЛЮМИНОФОР: P3 ЯНТАРНЫЙ' : '◉ ЛЮМИНОФОР: P1 ЗЕЛЁНЫЙ';
-    btn.classList.toggle('on', phosphorMode === 'amber');
-  }
   if(withFeedback){
     playClick();
     playStatic();
@@ -4181,11 +4176,6 @@ function togglePhosphor(forceMode){
   applyPhosphorMode(next, true);
 }
 applyPhosphorMode(phosphorMode, false);
-
-const phosphorBtn = document.getElementById('phosphorToggle');
-if(phosphorBtn){
-  phosphorBtn.addEventListener('click', ()=> togglePhosphor());
-}
 
 /* ==========================================================================
    РЕЖИМ ОЖИДАНИЯ ЭЛТ-ТЕРМИНАЛА С ПОМЕХАМИ ПРИ БЕЗДЕЙСТВИИ (STANDBY)
